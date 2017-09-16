@@ -2,7 +2,7 @@ package anyobject
 
 import (
 	"log"
-	helper "mongodb/helper"
+	helper "restauranteapi/helper"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"

@@ -2,7 +2,7 @@ package drinks
 
 import (
 	"log"
-	"restaurante/mongodb/helper"
+	"restaurante/helper"
 
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"

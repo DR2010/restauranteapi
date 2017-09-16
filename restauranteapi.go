@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"mongodb/dishes"
-	"mongodb/helper"
 	"net/http"
+	"restauranteapi/dishes"
+	"restauranteapi/helper"
 
 	_ "github.com/go-sql-driver/mysql"
 )
