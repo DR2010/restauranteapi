@@ -43,7 +43,7 @@ func Dishadd(database helper.DatabaseX, dishInsert Dish) helper.Resultado {
 
 	var res helper.Resultado
 	res.ErrorCode = "0001"
-	res.ErrorDescription = "Something Happened"
+	res.ErrorDescription = "Dish added"
 	res.IsSuccessful = "Y"
 
 	return res

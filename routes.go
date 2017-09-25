@@ -54,4 +54,6 @@ func XNewRouter() *mux.Router {
 
 var routes = Routes{
 	Route{"dishlist", "GET", "/dishlist", dishlist},
+	Route{"dishadd", "POST", "/dishadd", dishadd},
+	Route{"dishalsolist", "GET", "/dishalsolist", dishalsolist},
 }
