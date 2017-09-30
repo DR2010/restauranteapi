@@ -13,6 +13,3 @@ type Resultado struct {
 	ErrorDescription string // description
 	IsSuccessful     string // Y or N
 }
-
-func add() {
-}

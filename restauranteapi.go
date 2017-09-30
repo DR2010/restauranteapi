@@ -9,10 +9,12 @@ import (
 	"restauranteapi/dishes"
 	"restauranteapi/helper"
 
+	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 var mongodbvar helper.DatabaseX
+var redisclient *redis.Client
 
 var db *sql.DB
 var err error
@@ -21,15 +23,25 @@ var err error
 //
 func main() {
 
-	mongodbvar.Location = "192.168.2.180"
-	mongodbvar.Database = "restaurante"
+	redisclient = redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
 
-	var porta string
-	porta = ":1520"
+	fmt.Println(">>> Web Server: restauranteAPI.exe running.")
+	fmt.Println("Loading reference data in cache - Redis")
+	loadreferencedatainredis()
+	APIServerPort, _ := redisclient.Get("API.APIServer.Port").Result()
+	MongoDBLocation, _ := redisclient.Get("API.MongoDB.Location").Result()
+	MongoDBDatabase, _ := redisclient.Get("API.MongoDB.Database").Result()
 
-	fmt.Println("Running... Listening to " + porta)
-	fmt.Println("MongoDB location: " + mongodbvar.Location)
-	fmt.Println("MongoDB database: " + mongodbvar.Database)
+	mongodbvar.Location = MongoDBLocation
+	mongodbvar.Database = MongoDBDatabase
+
+	fmt.Println("Running... Listening to " + APIServerPort)
+	fmt.Println("MongoDB location: " + MongoDBLocation)
+	fmt.Println("MongoDB database: " + MongoDBDatabase)
 
 	router := XNewRouter()
 
@@ -37,24 +49,52 @@ func main() {
 	//
 	http.Handle("/", router) // setting router rule
 
-	err := http.ListenAndServe(porta, nil) // setting listening port
+	err := http.ListenAndServe(APIServerPort, nil) // setting listening port
 	if err != nil {
 		//using the mux router
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
+func loadreferencedatainredis() {
+
+	// err = client.Set("MongoDB.Location", "{\"MongoDB.Location\":\"192.168.2.180\"}", 0).Err()
+	err = redisclient.Set("API.MongoDB.Location", "192.168.2.180", 0).Err()
+	err = redisclient.Set("API.MongoDB.Database", "restaurante", 0).Err()
+	err = redisclient.Set("API.APIServer.IPAddress", "192.168.2.170", 0).Err()
+	err = redisclient.Set("API.APIServer.Port", ":1520", 0).Err()
+}
+
 func dishlist(httpwriter http.ResponseWriter, req *http.Request) {
 
-	var dishlist = dishes.GetAll(mongodbvar)
+	var dishlist = dishes.GetAll(redisclient)
 
 	json.NewEncoder(httpwriter).Encode(&dishlist)
+}
+
+func dishfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
+
+	dishfound := dishes.Dish{}
+
+	dishtofind := httprequest.FormValue("dishname") // This is the key, must be unique
+
+	params := httprequest.URL.Query()
+	parmdishname := params.Get("dishname")
+
+	fmt.Println("params.Get parmdishname")
+	fmt.Println(parmdishname)
+
+	fmt.Println("httprequest.FormValue dishname")
+	fmt.Println(dishtofind)
+
+	dishfound = dishes.Find(redisclient, dishtofind)
+
+	json.NewEncoder(httpwriter).Encode(&dishfound)
 }
 
 func dishadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 	dishtoadd := dishes.Dish{}
-	fmt.Println("Aqui 001")
 
 	dishtoadd.Name = req.FormValue("dishname") // This is the key, must be unique
 	dishtoadd.Type = req.FormValue("dishtype")
@@ -65,10 +105,33 @@ func dishadd(httpwriter http.ResponseWriter, req *http.Request) {
 	fmt.Println("dishtoadd.Name")
 	fmt.Println(dishtoadd.Name)
 
-	// Keeping one as an example of retrieving query string data
-	// Nao sei passar por GoLang os valores no Body do URL request
-	// So' sei passar pelo query string, entao este e' o codigo
-	// Quando conseguir passar o Body, mudo o codigo
+	// params := req.URL.Query()
+	// dishtoadd.Name = params.Get("dishname")
+	// dishtoadd.Type = params.Get("dishtype")
+	// dishtoadd.Price = params.Get("dishprice")
+	// dishtoadd.GlutenFree = params.Get("dishglutenfree")
+	// dishtoadd.DairyFree = params.Get("dishdairyfree")
+	// dishtoadd.Vegetarian = params.Get("dishvegetarian")
+
+	ret := dishes.Dishadd(redisclient, dishtoadd)
+
+	if ret.IsSuccessful == "Y" {
+		// do something
+	}
+}
+
+func dishupdate(httpwriter http.ResponseWriter, req *http.Request) {
+
+	dishtoupdate := dishes.Dish{}
+
+	dishtoupdate.Name = req.FormValue("dishname") // This is the key, must be unique
+	dishtoupdate.Type = req.FormValue("dishtype")
+	dishtoupdate.Price = req.FormValue("dishprice")
+	dishtoupdate.GlutenFree = req.FormValue("dishglutenfree")
+	dishtoupdate.DairyFree = req.FormValue("dishdairyfree")
+	dishtoupdate.Vegetarian = req.FormValue("dishvegetarian")
+	fmt.Println("dishtoupdate.Name")
+	fmt.Println(dishtoupdate.Name)
 
 	// params := req.URL.Query()
 	// dishtoadd.Name = params.Get("dishname")
@@ -78,7 +141,7 @@ func dishadd(httpwriter http.ResponseWriter, req *http.Request) {
 	// dishtoadd.DairyFree = params.Get("dishdairyfree")
 	// dishtoadd.Vegetarian = params.Get("dishvegetarian")
 
-	ret := dishes.Dishadd(mongodbvar, dishtoadd)
+	ret := dishes.Dishupdate(redisclient, dishtoupdate)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
@@ -87,7 +150,26 @@ func dishadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 func dishalsolist(httpwriter http.ResponseWriter, req *http.Request) {
 
-	var dishlist = dishes.GetAll(mongodbvar)
+	var dishlist = dishes.GetAll(redisclient)
 
 	json.NewEncoder(httpwriter).Encode(&dishlist)
+}
+
+type rediscachevalues struct {
+	MongoDBLocation string
+	MongoDBDatabase string
+	APIServerPort   string
+	APIServerIP     string
+}
+
+func getcachedvalues(httpwriter http.ResponseWriter, req *http.Request) {
+
+	var rv = new(rediscachevalues)
+
+	rv.MongoDBLocation, _ = redisclient.Get("MongoDB.Location").Result()
+	rv.MongoDBDatabase, _ = redisclient.Get("MongoDB.Database").Result()
+	rv.APIServerPort, _ = redisclient.Get("APIServer.Port").Result()
+	rv.APIServerIP, _ = redisclient.Get("APIServer.IP").Result()
+
+	json.NewEncoder(httpwriter).Encode(&rv)
 }

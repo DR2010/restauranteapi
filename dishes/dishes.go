@@ -1,8 +1,11 @@
 package dishes
 
 import (
+	"fmt"
 	"log"
 	helper "restauranteapi/helper"
+
+	"github.com/go-redis/redis"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -20,9 +23,12 @@ type Dish struct {
 }
 
 // Dishadd is for export
-func Dishadd(database helper.DatabaseX, dishInsert Dish) helper.Resultado {
+func Dishadd(redisclient *redis.Client, dishInsert Dish) helper.Resultado {
 
+	database := new(helper.DatabaseX)
 	database.Collection = "dishes"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
@@ -50,9 +56,12 @@ func Dishadd(database helper.DatabaseX, dishInsert Dish) helper.Resultado {
 }
 
 // Find is to find stuff
-func Find(database helper.DatabaseX, dishFind string) Dish {
+func Find(redisclient *redis.Client, dishFind string) Dish {
 
+	database := new(helper.DatabaseX)
 	database.Collection = "dishes"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 
 	dishName := dishFind
 	dishnull := Dish{}
@@ -84,9 +93,17 @@ func Find(database helper.DatabaseX, dishFind string) Dish {
 }
 
 // GetAll works
-func GetAll(database helper.DatabaseX) []Dish {
+func GetAll(redisclient *redis.Client) []Dish {
+
+	database := new(helper.DatabaseX)
 
 	database.Collection = "dishes"
+
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+
+	fmt.Println("database.Location")
+	fmt.Println(database.Location)
 
 	session, err := mgo.Dial(database.Location)
 
@@ -117,9 +134,12 @@ func GetAll(database helper.DatabaseX) []Dish {
 }
 
 // Dishupdate is
-func Dishupdate(database helper.DatabaseX, dishUpdate Dish) helper.Resultado {
+func Dishupdate(redisclient *redis.Client, dishUpdate Dish) helper.Resultado {
 
+	database := new(helper.DatabaseX)
 	database.Collection = "dishes"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
