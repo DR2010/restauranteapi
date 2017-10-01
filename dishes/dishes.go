@@ -56,7 +56,7 @@ func Dishadd(redisclient *redis.Client, dishInsert Dish) helper.Resultado {
 }
 
 // Find is to find stuff
-func Find(redisclient *redis.Client, dishFind string) Dish {
+func Find(redisclient *redis.Client, dishFind string) (Dish, string) {
 
 	database := new(helper.DatabaseX)
 	database.Collection = "dishes"
@@ -86,10 +86,10 @@ func Find(redisclient *redis.Client, dishFind string) Dish {
 	var numrecsel = len(result)
 
 	if numrecsel <= 0 {
-		return dishnull
+		return dishnull, "404 Not found"
 	}
 
-	return result[0]
+	return result[0], "200 OK"
 }
 
 // GetAll works

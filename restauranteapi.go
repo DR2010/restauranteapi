@@ -87,7 +87,7 @@ func dishfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
 	fmt.Println("httprequest.FormValue dishname")
 	fmt.Println(dishtofind)
 
-	dishfound = dishes.Find(redisclient, dishtofind)
+	dishfound, _ = dishes.Find(redisclient, dishtofind)
 
 	json.NewEncoder(httpwriter).Encode(&dishfound)
 }
@@ -104,6 +104,17 @@ func dishadd(httpwriter http.ResponseWriter, req *http.Request) {
 	dishtoadd.Vegetarian = req.FormValue("dishvegetarian")
 	fmt.Println("dishtoadd.Name")
 	fmt.Println(dishtoadd.Name)
+
+	_, recordstatus := dishes.Find(redisclient, dishtoadd.Name)
+	if recordstatus == "200 OK" {
+		fmt.Println("dishtoadd.Name")
+		fmt.Println(dishtoadd.Name)
+
+		fmt.Println("recordstatus")
+		fmt.Println(recordstatus)
+		http.Error(httpwriter, "Record already exists.", 422)
+		return
+	}
 
 	// params := req.URL.Query()
 	// dishtoadd.Name = params.Get("dishname")
