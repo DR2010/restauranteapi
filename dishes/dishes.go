@@ -1,3 +1,7 @@
+// Package dishes is a dish for packages
+// -------------------------------------
+// .../restauranteapi/dishes/dishes.go
+// -------------------------------------
 package dishes
 
 import (
@@ -93,7 +97,7 @@ func Find(redisclient *redis.Client, dishFind string) (Dish, string) {
 }
 
 // GetAll works
-func GetAll(redisclient *redis.Client) []Dish {
+func Getall(redisclient *redis.Client) []Dish {
 
 	database := new(helper.DatabaseX)
 
@@ -101,6 +105,9 @@ func GetAll(redisclient *redis.Client) []Dish {
 
 	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
 	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+
+	// database.Database = "restaurante"
+	// database.Location = "192.168.2.180"
 
 	fmt.Println("database.Location")
 	fmt.Println(database.Location)
@@ -167,8 +174,12 @@ func Dishupdate(redisclient *redis.Client, dishUpdate Dish) helper.Resultado {
 }
 
 // Dishdelete is
-func Dishdelete(database helper.DatabaseX, dishUpdate Dish) helper.Resultado {
+func Dishdelete(redisclient *redis.Client, dishDelete Dish) helper.Resultado {
 
+	database := new(helper.DatabaseX)
+	database.Collection = "dishes"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 	database.Collection = "dishes"
 
 	session, err := mgo.Dial(database.Location)
@@ -182,7 +193,7 @@ func Dishdelete(database helper.DatabaseX, dishUpdate Dish) helper.Resultado {
 
 	collection := session.DB(database.Database).C(database.Collection)
 
-	err = collection.Remove(bson.M{"name": dishUpdate.Name})
+	err = collection.Remove(bson.M{"name": dishDelete.Name})
 
 	if err != nil {
 		log.Fatal(err)
@@ -190,7 +201,7 @@ func Dishdelete(database helper.DatabaseX, dishUpdate Dish) helper.Resultado {
 
 	var res helper.Resultado
 	res.ErrorCode = "0001"
-	res.ErrorDescription = "Something Happened"
+	res.ErrorDescription = "Dish deleted successfully"
 	res.IsSuccessful = "Y"
 
 	return res

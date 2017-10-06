@@ -1,8 +1,11 @@
 package orders
 
 import (
+	"fmt"
 	"log"
 	helper "restauranteapi/helper"
+
+	"github.com/go-redis/redis"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -50,10 +53,13 @@ type SearchCriteria struct {
 	DeliveryContactPhone string // Delivery phone number
 }
 
-// Add an order
-func Add(database helper.DatabaseX, orderInsert Order) helper.Resultado {
+// Add is for export
+func Add(redisclient *redis.Client, objtoinsert Order) helper.Resultado {
 
-	database.Collection = "orders"
+	database := new(helper.DatabaseX)
+	database.Collection = "dishes"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
@@ -66,7 +72,7 @@ func Add(database helper.DatabaseX, orderInsert Order) helper.Resultado {
 
 	collection := session.DB(database.Database).C(database.Collection)
 
-	err = collection.Insert(orderInsert)
+	err = collection.Insert(objtoinsert)
 
 	if err != nil {
 		log.Fatal(err)
@@ -74,24 +80,22 @@ func Add(database helper.DatabaseX, orderInsert Order) helper.Resultado {
 
 	var res helper.Resultado
 	res.ErrorCode = "0001"
-	res.ErrorDescription = "Order placed successfully"
+	res.ErrorDescription = "Dish added"
 	res.IsSuccessful = "Y"
 
 	return res
 }
 
-// Search for orders allow multiple criteria
-// Client ID, Date, Status
-func Search(database helper.DatabaseX, searchcriteria SearchCriteria) Order {
+// Find is to find stuff
+func Find(redisclient *redis.Client, objtofind string) (Order, string) {
 
-	// Searching for orders can be a pain
-	// Customer ID or Name
-	// It can find one or all
-	// Order may have a status (open, completed, cancelled)
+	database := new(helper.DatabaseX)
+	database.Collection = "dishes"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 
-	database.Collection = "orders"
-
-	ordernull := Order{}
+	objkey := objtofind
+	objnull := Order{}
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
@@ -104,11 +108,8 @@ func Search(database helper.DatabaseX, searchcriteria SearchCriteria) Order {
 
 	c := session.DB(database.Database).C(database.Collection)
 
-	// Various search combinations
-	// Let's start with Client ID and Status = "Open"
-
 	result := []Order{}
-	err1 := c.Find(bson.M{"ClientID": searchcriteria.ClientID}).All(&result)
+	err1 := c.Find(bson.M{"name": objkey}).All(&result)
 	if err1 != nil {
 		log.Fatal(err1)
 	}
@@ -116,16 +117,24 @@ func Search(database helper.DatabaseX, searchcriteria SearchCriteria) Order {
 	var numrecsel = len(result)
 
 	if numrecsel <= 0 {
-		return ordernull
+		return objnull, "404 Not found"
 	}
 
-	return result[0]
+	return result[0], "200 OK"
 }
 
-// GetAll works
-func GetAll(database helper.DatabaseX) []Order {
+// Getall works
+func Getall(redisclient *redis.Client) []Order {
+
+	database := new(helper.DatabaseX)
 
 	database.Collection = "orders"
+
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+
+	fmt.Println("database.Location")
+	fmt.Println(database.Location)
 
 	session, err := mgo.Dial(database.Location)
 
@@ -155,12 +164,13 @@ func GetAll(database helper.DatabaseX) []Order {
 	return nil
 }
 
-// Update is for full replacement of order when it's status is Open
-// I am not sure if I should protect the other orders
-// It uses the order ID to search
-func Update(database helper.DatabaseX, orderUpdate Order) helper.Resultado {
+// Update is
+func Update(redisclient *redis.Client, objtoupdate Order) helper.Resultado {
 
-	database.Collection = "order"
+	database := new(helper.DatabaseX)
+	database.Collection = "orders"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
@@ -173,7 +183,7 @@ func Update(database helper.DatabaseX, orderUpdate Order) helper.Resultado {
 
 	collection := session.DB(database.Database).C(database.Collection)
 
-	err = collection.Update(bson.M{"ClientID": orderUpdate.ID}, orderUpdate)
+	err = collection.Update(bson.M{"name": objtoupdate.ID}, objtoupdate)
 
 	if err != nil {
 		log.Fatal(err)
@@ -181,16 +191,20 @@ func Update(database helper.DatabaseX, orderUpdate Order) helper.Resultado {
 
 	var res helper.Resultado
 	res.ErrorCode = "0001"
-	res.ErrorDescription = "Order has been updated."
+	res.ErrorDescription = "Something Happened"
 	res.IsSuccessful = "Y"
 
 	return res
 }
 
-// Delete order
-func Delete(database helper.DatabaseX, orderDelete Order) helper.Resultado {
+// Delete is
+func Delete(redisclient *redis.Client, objtodeletekey string) helper.Resultado {
 
-	database.Collection = "orders"
+	database := new(helper.DatabaseX)
+	database.Collection = "dishes"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+	database.Collection = "dishes"
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
@@ -203,7 +217,7 @@ func Delete(database helper.DatabaseX, orderDelete Order) helper.Resultado {
 
 	collection := session.DB(database.Database).C(database.Collection)
 
-	err = collection.Remove(bson.M{"ClientID": orderDelete.ID})
+	err = collection.Remove(bson.M{"ID": objtodeletekey})
 
 	if err != nil {
 		log.Fatal(err)
@@ -211,7 +225,7 @@ func Delete(database helper.DatabaseX, orderDelete Order) helper.Resultado {
 
 	var res helper.Resultado
 	res.ErrorCode = "0001"
-	res.ErrorDescription = "Order deleted"
+	res.ErrorDescription = "Dish deleted successfully"
 	res.IsSuccessful = "Y"
 
 	return res

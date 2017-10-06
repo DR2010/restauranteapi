@@ -1,3 +1,7 @@
+// Package main is the main package
+// -------------------------------------
+// .../restauranteapi/routes.go
+// -------------------------------------
 package main
 
 import (
@@ -53,10 +57,13 @@ func XNewRouter() *mux.Router {
 }
 
 var routes = Routes{
-	Route{"dishlist", "GET", "/dishlist", dishlist},
-	Route{"dishfind", "GET", "/dishfind", dishfind},
-	Route{"dishadd", "POST", "/dishadd", dishadd},
-	Route{"dishupdate", "POST", "/dishupdate", dishupdate},
-	Route{"dishalsolist", "GET", "/dishalsolist", dishalsolist},
+	Route{"dishlist", "GET", "/dishlist", Hdishlist},
+	Route{"dishfind", "GET", "/dishfind", Hdishfind},
+	Route{"dishadd", "POST", "/dishadd", Hdishadd},
+	Route{"dishupdate", "POST", "/dishupdate", Hdishupdate},
+	Route{"dishdelete", "POST", "/dishdelete", Hdishdelete},
+	Route{"dishalsolist", "GET", "/dishalsolist", Hdishalsolist},
 	Route{"getcachedvalues", "GET", "/getcachedvalues", getcachedvalues},
+
+	Route{"orderlist", "GET", "/orderlist", OrderList},
 }

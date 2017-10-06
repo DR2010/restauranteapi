@@ -1,3 +1,7 @@
+// Package main is the main package
+// -------------------------------------
+// .../restauranteapi/restauranteapi.go
+// -------------------------------------
 package main
 
 import (
@@ -6,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"restauranteapi/dishes"
 	"restauranteapi/helper"
 
 	"github.com/go-redis/redis"
@@ -31,7 +34,9 @@ func main() {
 
 	fmt.Println(">>> Web Server: restauranteAPI.exe running.")
 	fmt.Println("Loading reference data in cache - Redis")
+
 	loadreferencedatainredis()
+
 	APIServerPort, _ := redisclient.Get("API.APIServer.Port").Result()
 	MongoDBLocation, _ := redisclient.Get("API.MongoDB.Location").Result()
 	MongoDBDatabase, _ := redisclient.Get("API.MongoDB.Database").Result()
@@ -65,107 +70,6 @@ func loadreferencedatainredis() {
 	err = redisclient.Set("API.APIServer.Port", ":1520", 0).Err()
 }
 
-func dishlist(httpwriter http.ResponseWriter, req *http.Request) {
-
-	var dishlist = dishes.GetAll(redisclient)
-
-	json.NewEncoder(httpwriter).Encode(&dishlist)
-}
-
-func dishfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
-
-	dishfound := dishes.Dish{}
-
-	dishtofind := httprequest.FormValue("dishname") // This is the key, must be unique
-
-	params := httprequest.URL.Query()
-	parmdishname := params.Get("dishname")
-
-	fmt.Println("params.Get parmdishname")
-	fmt.Println(parmdishname)
-
-	fmt.Println("httprequest.FormValue dishname")
-	fmt.Println(dishtofind)
-
-	dishfound, _ = dishes.Find(redisclient, dishtofind)
-
-	json.NewEncoder(httpwriter).Encode(&dishfound)
-}
-
-func dishadd(httpwriter http.ResponseWriter, req *http.Request) {
-
-	dishtoadd := dishes.Dish{}
-
-	dishtoadd.Name = req.FormValue("dishname") // This is the key, must be unique
-	dishtoadd.Type = req.FormValue("dishtype")
-	dishtoadd.Price = req.FormValue("dishprice")
-	dishtoadd.GlutenFree = req.FormValue("dishglutenfree")
-	dishtoadd.DairyFree = req.FormValue("dishdairyfree")
-	dishtoadd.Vegetarian = req.FormValue("dishvegetarian")
-	fmt.Println("dishtoadd.Name")
-	fmt.Println(dishtoadd.Name)
-
-	_, recordstatus := dishes.Find(redisclient, dishtoadd.Name)
-	if recordstatus == "200 OK" {
-		fmt.Println("dishtoadd.Name")
-		fmt.Println(dishtoadd.Name)
-
-		fmt.Println("recordstatus")
-		fmt.Println(recordstatus)
-		http.Error(httpwriter, "Record already exists.", 422)
-		return
-	}
-
-	// params := req.URL.Query()
-	// dishtoadd.Name = params.Get("dishname")
-	// dishtoadd.Type = params.Get("dishtype")
-	// dishtoadd.Price = params.Get("dishprice")
-	// dishtoadd.GlutenFree = params.Get("dishglutenfree")
-	// dishtoadd.DairyFree = params.Get("dishdairyfree")
-	// dishtoadd.Vegetarian = params.Get("dishvegetarian")
-
-	ret := dishes.Dishadd(redisclient, dishtoadd)
-
-	if ret.IsSuccessful == "Y" {
-		// do something
-	}
-}
-
-func dishupdate(httpwriter http.ResponseWriter, req *http.Request) {
-
-	dishtoupdate := dishes.Dish{}
-
-	dishtoupdate.Name = req.FormValue("dishname") // This is the key, must be unique
-	dishtoupdate.Type = req.FormValue("dishtype")
-	dishtoupdate.Price = req.FormValue("dishprice")
-	dishtoupdate.GlutenFree = req.FormValue("dishglutenfree")
-	dishtoupdate.DairyFree = req.FormValue("dishdairyfree")
-	dishtoupdate.Vegetarian = req.FormValue("dishvegetarian")
-	fmt.Println("dishtoupdate.Name")
-	fmt.Println(dishtoupdate.Name)
-
-	// params := req.URL.Query()
-	// dishtoadd.Name = params.Get("dishname")
-	// dishtoadd.Type = params.Get("dishtype")
-	// dishtoadd.Price = params.Get("dishprice")
-	// dishtoadd.GlutenFree = params.Get("dishglutenfree")
-	// dishtoadd.DairyFree = params.Get("dishdairyfree")
-	// dishtoadd.Vegetarian = params.Get("dishvegetarian")
-
-	ret := dishes.Dishupdate(redisclient, dishtoupdate)
-
-	if ret.IsSuccessful == "Y" {
-		// do something
-	}
-}
-
-func dishalsolist(httpwriter http.ResponseWriter, req *http.Request) {
-
-	var dishlist = dishes.GetAll(redisclient)
-
-	json.NewEncoder(httpwriter).Encode(&dishlist)
-}
-
 type rediscachevalues struct {
 	MongoDBLocation string
 	MongoDBDatabase string
@@ -173,14 +77,33 @@ type rediscachevalues struct {
 	APIServerIP     string
 }
 
+// Cache represents the cache data
+type Cache struct {
+	Key   string // cache key
+	Value string // value in cache
+}
+
 func getcachedvalues(httpwriter http.ResponseWriter, req *http.Request) {
 
 	var rv = new(rediscachevalues)
 
-	rv.MongoDBLocation, _ = redisclient.Get("MongoDB.Location").Result()
-	rv.MongoDBDatabase, _ = redisclient.Get("MongoDB.Database").Result()
-	rv.APIServerPort, _ = redisclient.Get("APIServer.Port").Result()
-	rv.APIServerIP, _ = redisclient.Get("APIServer.IP").Result()
+	rv.MongoDBLocation, _ = redisclient.Get("API.MongoDB.Location").Result()
+	rv.MongoDBDatabase, _ = redisclient.Get("API.MongoDB.Database").Result()
+	rv.APIServerPort, _ = redisclient.Get("API.APIServer.Port").Result()
+	rv.APIServerIP, _ = redisclient.Get("API.APIServer.IPAddress").Result()
 
-	json.NewEncoder(httpwriter).Encode(&rv)
+	keys := make([]Cache, 4)
+	keys[0].Key = "API.MongoDB.Location"
+	keys[0].Value = rv.MongoDBLocation
+
+	keys[1].Key = "API.MongoDB.Database"
+	keys[1].Value = rv.MongoDBDatabase
+
+	keys[2].Key = "API.APIServer.Port"
+	keys[2].Value = rv.APIServerPort
+
+	keys[3].Key = "API.APIServer.IPAddress"
+	keys[3].Value = rv.APIServerIP
+
+	json.NewEncoder(httpwriter).Encode(&keys)
 }
