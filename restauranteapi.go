@@ -61,12 +61,16 @@ func main() {
 	}
 }
 
+//#region Caching
+
 func loadreferencedatainredis() {
 
 	// err = client.Set("MongoDB.Location", "{\"MongoDB.Location\":\"192.168.2.180\"}", 0).Err()
-	err = redisclient.Set("API.MongoDB.Location", "192.168.2.180", 0).Err()
+	// err = redisclient.Set("API.MongoDB.Location", "192.168.2.180", 0).Err()
+	err = redisclient.Set("API.MongoDB.Location", "localhost", 0).Err()
 	err = redisclient.Set("API.MongoDB.Database", "restaurante", 0).Err()
-	err = redisclient.Set("API.APIServer.IPAddress", "192.168.2.170", 0).Err()
+	// err = redisclient.Set("API.APIServer.IPAddress", "192.168.2.170", 0).Err()
+	err = redisclient.Set("API.APIServer.IPAddress", "localhost", 0).Err()
 	err = redisclient.Set("API.APIServer.Port", ":1520", 0).Err()
 }
 
@@ -76,6 +80,8 @@ type rediscachevalues struct {
 	APIServerPort   string
 	APIServerIP     string
 }
+
+//#endregion Caching
 
 // Cache represents the cache data
 type Cache struct {
