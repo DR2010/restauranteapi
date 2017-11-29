@@ -21,6 +21,7 @@ type Order struct {
 	Time                 string        // Order Time
 	Status               string        // Open, Completed, Cancelled
 	EatMode              string        // EatIn, TakeAway, Delivery
+	Foodeatplace         string        // EatIn, TakeAway, Delivery
 	DeliveryMode         string        // Internal, UberEats,
 	DeliveryFee          string        // Delivery Fee
 	DeliveryLocation     string        // Address
@@ -57,7 +58,7 @@ type SearchCriteria struct {
 func Add(redisclient *redis.Client, objtoinsert Order) helper.Resultado {
 
 	database := new(helper.DatabaseX)
-	database.Collection = "dishes"
+	database.Collection = "orders"
 	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
 	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 
@@ -80,7 +81,7 @@ func Add(redisclient *redis.Client, objtoinsert Order) helper.Resultado {
 
 	var res helper.Resultado
 	res.ErrorCode = "0001"
-	res.ErrorDescription = "Dish added"
+	res.ErrorDescription = "Order added"
 	res.IsSuccessful = "Y"
 
 	return res

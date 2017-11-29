@@ -60,6 +60,7 @@ var routes = Routes{
 	Route{"dishlist", "GET", "/dishlist", Hdishlist},
 	Route{"dishfind", "GET", "/dishfind", Hdishfind},
 	Route{"dishadd", "POST", "/dishadd", Hdishadd},
+	Route{"orderadd", "POST", "/orderadd", Horderadd},
 	Route{"dishupdate", "POST", "/dishupdate", Hdishupdate},
 	Route{"dishdelete", "POST", "/dishdelete", Hdishdelete},
 	Route{"dishalsolist", "GET", "/dishalsolist", Hdishalsolist},

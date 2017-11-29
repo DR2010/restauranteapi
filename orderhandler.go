@@ -25,16 +25,17 @@ func Hfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
 	json.NewEncoder(httpwriter).Encode(&objfound)
 }
 
-// Hadd add orders
-func Hadd(httpwriter http.ResponseWriter, req *http.Request) {
+// Horderadd add orders
+func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 	objtoaction := orders.Order{}
 
+	objtoaction.ID = req.FormValue("orderID")             // This is the key, must be unique
 	objtoaction.ClientID = req.FormValue("orderClientID") // This is the key, must be unique
 	objtoaction.ClientName = req.FormValue("orderClientName")
 	objtoaction.Date = req.FormValue("orderDate")
-	objtoaction.DeliveryContactPhone = req.FormValue("orderDeliveryContactPhone")
-	objtoaction.DeliveryFee = req.FormValue("orderDeliveryFee")
+	objtoaction.Time = req.FormValue("orderTime")
+	objtoaction.Foodeatplace = req.FormValue("foodeatplace")
 
 	_, recordstatus := orders.Find(redisclient, objtoaction.ID)
 
@@ -49,6 +50,8 @@ func Hadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 	if ret.IsSuccessful == "Y" {
 		// do something
+
+		fmt.Println("Order added successfully:" + objtoaction.ClientName)
 	}
 }
 
