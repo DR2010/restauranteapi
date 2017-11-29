@@ -30,12 +30,12 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 	objtoaction := orders.Order{}
 
-	objtoaction.ID = req.FormValue("orderID")             // This is the key, must be unique
 	objtoaction.ClientID = req.FormValue("orderClientID") // This is the key, must be unique
 	objtoaction.ClientName = req.FormValue("orderClientName")
 	objtoaction.Date = req.FormValue("orderDate")
 	objtoaction.Time = req.FormValue("orderTime")
 	objtoaction.Foodeatplace = req.FormValue("foodeatplace")
+	objtoaction.ID = objtoaction.ClientName + objtoaction.Date + "01"
 
 	_, recordstatus := orders.Find(redisclient, objtoaction.ID)
 
@@ -43,6 +43,7 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 		fmt.Println("recordstatus")
 		fmt.Println(recordstatus)
 		http.Error(httpwriter, "Record already exists.", 422)
+
 		return
 	}
 
@@ -52,7 +53,19 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 		// do something
 
 		fmt.Println("Order added successfully:" + objtoaction.ClientName)
+
+		type RespAddOrder struct {
+			ID string
+		}
+
+		// return value
+		obj := &RespAddOrder{ID: objtoaction.ID}
+		bresp, _ := json.Marshal(obj)
+
+		fmt.Fprintf(httpwriter, string(bresp)) // write data to response
 	}
+
+	return
 }
 
 // Hupdate updates orders
