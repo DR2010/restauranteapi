@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	orders "restauranteapi/orders"
 
@@ -28,16 +29,26 @@ func Hfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
 // Horderadd add orders
 func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 
-	objtoaction := orders.Order{}
+	defer req.Body.Close()
+	bodybyte, _ := ioutil.ReadAll(req.Body)
+	// bodystr := string(bodybyte[:])
 
-	objtoaction.ClientID = req.FormValue("orderClientID") // This is the key, must be unique
-	objtoaction.ClientName = req.FormValue("orderClientName")
-	objtoaction.Date = req.FormValue("orderDate")
-	objtoaction.Time = req.FormValue("orderTime")
-	objtoaction.Foodeatplace = req.FormValue("foodeatplace")
-	objtoaction.ID = objtoaction.ClientName + objtoaction.Date + "01"
+	type dcOrder struct {
+		OrderID         string // random ID for order, yet to define algorithm
+		OrderClientID   string // Client Name
+		OrderClientName string // Client ID in case they logon
+		OrderDate       string // Order Date
+		OrderTime       string // Order Time
+		Foodeatplace    string // Order Time
+		Status          string // Order Time
+	}
 
-	_, recordstatus := orders.Find(redisclient, objtoaction.ID)
+	var objtoaction dcOrder
+	err = json.Unmarshal(bodybyte, &objtoaction)
+
+	objtoaction.OrderID = objtoaction.OrderClientName + objtoaction.OrderDate + "01"
+
+	_, recordstatus := orders.Find(redisclient, objtoaction.OrderID)
 
 	if recordstatus == "200 OK" {
 		fmt.Println("recordstatus")
@@ -47,19 +58,26 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ret := orders.Add(redisclient, objtoaction)
+	objtoactionMAP := orders.Order{}
+	objtoactionMAP.ID = objtoaction.OrderID
+	objtoactionMAP.ClientID = objtoaction.OrderClientID
+	objtoactionMAP.ClientName = objtoaction.OrderClientName
+	objtoactionMAP.Date = objtoaction.OrderDate
+	objtoactionMAP.Time = objtoaction.OrderTime
+
+	ret := orders.Add(redisclient, objtoactionMAP)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
 
-		fmt.Println("Order added successfully:" + objtoaction.ClientName)
+		fmt.Println("Order added successfully:" + objtoaction.OrderClientName)
 
 		type RespAddOrder struct {
 			ID string
 		}
 
 		// return value
-		obj := &RespAddOrder{ID: objtoaction.ID}
+		obj := &RespAddOrder{ID: objtoaction.OrderID}
 		bresp, _ := json.Marshal(obj)
 
 		fmt.Fprintf(httpwriter, string(bresp)) // write data to response
