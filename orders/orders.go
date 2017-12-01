@@ -26,16 +26,19 @@ type Order struct {
 	DeliveryFee          string        // Delivery Fee
 	DeliveryLocation     string        // Address
 	DeliveryContactPhone string        // Delivery phone number
-	Items                Item
+	TotalGeral           string        // Delivery phone number
+	Items                []Item
 }
 
 // Item represents a single item of an order
 type Item struct {
 	ID         string // Sequential number of the item
-	DishID     string // Dish ID or unique name from "Dishes"
+	PratoName  string // Dish ID or unique name from "Dishes"
 	GlutenFree string // Just Yes or No in case the dish has gluten free options
 	DiaryFree  string // Just Yes or No in case the dish has this option
 	Price      string // Individual price
+	Quantidade string // Individual price
+	Total      string // Total Price
 	Tax        string // GST
 }
 

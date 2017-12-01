@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	orders "restauranteapi/orders"
+	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -33,6 +34,12 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	bodybyte, _ := ioutil.ReadAll(req.Body)
 	// bodystr := string(bodybyte[:])
 
+	type dcOrderItem struct {
+		Pratoname  string // random ID for order, yet to define algorithm
+		Quantidade string // Client Name
+		Preco      string // Client ID in case they logon
+	}
+
 	type dcOrder struct {
 		OrderID         string // random ID for order, yet to define algorithm
 		OrderClientID   string // Client Name
@@ -41,6 +48,7 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 		OrderTime       string // Order Time
 		Foodeatplace    string // Order Time
 		Status          string // Order Time
+		Pratos          []dcOrderItem
 	}
 
 	var objtoaction dcOrder
@@ -64,6 +72,27 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	objtoactionMAP.ClientName = objtoaction.OrderClientName
 	objtoactionMAP.Date = objtoaction.OrderDate
 	objtoactionMAP.Time = objtoaction.OrderTime
+
+	var slen = len(objtoaction.Pratos)
+	objtoactionMAP.Items = make([]orders.Item, slen)
+
+	var totalgeral = 0
+
+	for index, element := range objtoaction.Pratos {
+		// index is the index where we are
+		// element is the element from someSlice for where we are
+		objtoactionMAP.Items[index].PratoName = element.Pratoname
+		objtoactionMAP.Items[index].Price = element.Preco
+		objtoactionMAP.Items[index].Quantidade = element.Quantidade
+
+		prc, _ := strconv.Atoi(element.Preco)
+		qty, _ := strconv.Atoi(element.Quantidade)
+		tot := prc * qty
+		totalgeral = totalgeral + tot
+
+		objtoactionMAP.Items[index].Total = strconv.Itoa(tot)
+	}
+	objtoactionMAP.TotalGeral = strconv.Itoa(totalgeral)
 
 	ret := orders.Add(redisclient, objtoactionMAP)
 
