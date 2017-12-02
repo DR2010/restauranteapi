@@ -8,10 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"restauranteapi/helper"
 	orders "restauranteapi/orders"
 	"strconv"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -56,35 +58,43 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	// bodystr := string(bodybyte[:])
 
 	type dcOrderItem struct {
-		Pratoname  string // random ID for order, yet to define algorithm
-		Quantidade string // Client Name
-		Preco      string // Client ID in case they logon
+		Pratoname  string //
+		Quantidade string //
+		Preco      string //
 	}
 
 	type dcOrder struct {
 		OrderID         string // random ID for order, yet to define algorithm
-		OrderClientID   string // Client Name
-		OrderClientName string // Client ID in case they logon
+		OrderClientID   string // Client ID in case they logon - later
+		OrderClientName string // Client Name for the order
 		OrderDate       string // Order Date
 		OrderTime       string // Order Time
-		Foodeatplace    string // Order Time
-		Status          string // Order Time
+		Foodeatplace    string // Delivery, Eat In, Take Away
+		Status          string // Status
 		Pratos          []dcOrderItem
 	}
 
 	var objtoaction dcOrder
 	err = json.Unmarshal(bodybyte, &objtoaction)
 
-	objtoaction.OrderID = objtoaction.OrderClientName + objtoaction.OrderDate + "01"
+	tries := 1
+	for tries < 1000 {
 
-	_, recordstatus := orders.Find(redisclient, objtoaction.OrderID)
+		rand.Seed(time.Now().UTC().UnixNano())
+		objtoaction.OrderID = strconv.Itoa(rand.Intn(100000))
+		objtoaction.OrderClientID = ""
 
-	if recordstatus == "200 OK" {
-		fmt.Println("recordstatus")
-		fmt.Println(recordstatus)
-		http.Error(httpwriter, "Record already exists.", 422)
+		_, recordstatus := orders.Find(redisclient, objtoaction.OrderID)
 
-		return
+		if recordstatus == "200 OK" {
+			fmt.Println("recordstatus")
+			fmt.Println(recordstatus)
+			http.Error(httpwriter, "Record already exists.", 422)
+			fmt.Println("try=" + strconv.Itoa(tries))
+			tries++
+			continue
+		}
+		break
 	}
 
 	objtoactionMAP := orders.Order{}
