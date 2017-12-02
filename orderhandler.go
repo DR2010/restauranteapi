@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"restauranteapi/helper"
 	orders "restauranteapi/orders"
 	"strconv"
 
@@ -25,6 +26,26 @@ func Hfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
 	objfound, _ = orders.Find(redisclient, objtofind)
 
 	json.NewEncoder(httpwriter).Encode(&objfound)
+}
+
+// Hdishfind is
+func Horderfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
+
+	redisclient := helper.GetRedisPointer()
+
+	orderfound := orders.Order{}
+
+	ordertofind := httprequest.FormValue("orderid") // This is the key, must be unique
+
+	params := httprequest.URL.Query()
+	parmorderid := params.Get("orderid")
+
+	fmt.Println("params.Get parmorderid")
+	fmt.Println(parmorderid)
+
+	orderfound, _ = orders.Find(redisclient, ordertofind)
+
+	json.NewEncoder(httpwriter).Encode(&orderfound)
 }
 
 // Horderadd add orders
@@ -78,19 +99,31 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 	var totalgeral = 0
 
+	// I have to remove the header coming from the caller.
+	// Perhaps the caller should suppress the header somehow
+
+	var destindex = 0
+
 	for index, element := range objtoaction.Pratos {
 		// index is the index where we are
 		// element is the element from someSlice for where we are
-		objtoactionMAP.Items[index].PratoName = element.Pratoname
-		objtoactionMAP.Items[index].Price = element.Preco
-		objtoactionMAP.Items[index].Quantidade = element.Quantidade
+
+		if index == 0 {
+			continue
+		}
+
+		destindex = index - 1
+
+		objtoactionMAP.Items[destindex].PratoName = element.Pratoname
+		objtoactionMAP.Items[destindex].Price = element.Preco
+		objtoactionMAP.Items[destindex].Quantidade = element.Quantidade
 
 		prc, _ := strconv.Atoi(element.Preco)
 		qty, _ := strconv.Atoi(element.Quantidade)
 		tot := prc * qty
 		totalgeral = totalgeral + tot
 
-		objtoactionMAP.Items[index].Total = strconv.Itoa(tot)
+		objtoactionMAP.Items[destindex].Total = strconv.Itoa(tot)
 	}
 	objtoactionMAP.TotalGeral = strconv.Itoa(totalgeral)
 
@@ -123,8 +156,6 @@ func Hupdate(httpwriter http.ResponseWriter, req *http.Request) {
 	objtoaction.ClientID = req.FormValue("orderClientID") // This is the key, must be unique
 	objtoaction.ClientName = req.FormValue("orderClientName")
 	objtoaction.Date = req.FormValue("orderDate")
-	objtoaction.DeliveryContactPhone = req.FormValue("orderDeliveryContactPhone")
-	objtoaction.DeliveryFee = req.FormValue("orderDeliveryFee")
 
 	ret := orders.Update(redisclient, objtoaction)
 

@@ -13,21 +13,17 @@ import (
 
 // Order is what the client wants
 type Order struct {
-	SystemID             bson.ObjectId `json:"id"        bson:"_id,omitempty"`
-	ID                   string        // random ID for order, yet to define algorithm
-	ClientName           string        // Client Name
-	ClientID             string        // Client ID in case they logon
-	Date                 string        // Order Date
-	Time                 string        // Order Time
-	Status               string        // Open, Completed, Cancelled
-	EatMode              string        // EatIn, TakeAway, Delivery
-	Foodeatplace         string        // EatIn, TakeAway, Delivery
-	DeliveryMode         string        // Internal, UberEats,
-	DeliveryFee          string        // Delivery Fee
-	DeliveryLocation     string        // Address
-	DeliveryContactPhone string        // Delivery phone number
-	TotalGeral           string        // Delivery phone number
-	Items                []Item
+	SystemID     bson.ObjectId `json:"id"        bson:"_id,omitempty"`
+	ID           string        // random ID for order, yet to define algorithm
+	ClientName   string        // Client Name
+	ClientID     string        // Client ID in case they logon
+	Date         string        // Order Date
+	Time         string        // Order Time
+	Status       string        // Open, Completed, Cancelled
+	EatMode      string        // EatIn, TakeAway, Delivery
+	Foodeatplace string        // EatIn, TakeAway, Delivery
+	TotalGeral   string        // Delivery phone number
+	Items        []Item
 }
 
 // Item represents a single item of an order
@@ -94,7 +90,7 @@ func Add(redisclient *redis.Client, objtoinsert Order) helper.Resultado {
 func Find(redisclient *redis.Client, objtofind string) (Order, string) {
 
 	database := new(helper.DatabaseX)
-	database.Collection = "dishes"
+	database.Collection = "orders"
 	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
 	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 
@@ -113,7 +109,7 @@ func Find(redisclient *redis.Client, objtofind string) (Order, string) {
 	c := session.DB(database.Database).C(database.Collection)
 
 	result := []Order{}
-	err1 := c.Find(bson.M{"name": objkey}).All(&result)
+	err1 := c.Find(bson.M{"id": objkey}).All(&result)
 	if err1 != nil {
 		log.Fatal(err1)
 	}
