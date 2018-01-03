@@ -67,4 +67,8 @@ var routes = Routes{
 	Route{"orderlist", "GET", "/orderlist", OrderList},
 	Route{"orderadd", "POST", "/orderadd", Horderadd},
 	Route{"orderfind", "GET", "/orderfind", Horderfind},
+	Route{"btccotacaoadd", "POST", "/btccotacaoadd", Hbtccotacaoadd},
+	Route{"btccotacaolist", "GET", "/btccotacaolist", Hbtccotacaolist},
+	Route{"securitylogin", "POST", "/securitylogin", Hsecuritylogin},
+	Route{"securitysignup", "POST", "/securitysignup", Hsecuritysignup},
 }

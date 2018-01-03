@@ -1,0 +1,214 @@
+// Package security is a security for packages
+// -------------------------------------
+// .../restauranteapi/security/security.go
+// -------------------------------------
+package security
+
+import (
+	"crypto/sha1"
+	"encoding/hex"
+	"log"
+	helper "restauranteapi/helper"
+	"strings"
+	"time"
+
+	"github.com/go-redis/redis"
+
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+)
+
+// Credentials is to be exported
+type Credentials struct {
+	SystemID         bson.ObjectId `json:"id"        bson:"_id,omitempty"`
+	UserID           string        //
+	Name             string        //
+	Password         string        //
+	PasswordValidate string        //
+	Roles            []string      //
+}
+
+// Useradd is for export
+func Useradd(redisclient *redis.Client, userInsert Credentials) helper.Resultado {
+
+	database := new(helper.DatabaseX)
+	database.Collection = "security"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+
+	session, err := mgo.Dial(database.Location)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+
+	collection := session.DB(database.Database).C(database.Collection)
+
+	err = collection.Insert(userInsert)
+
+	if err != nil {
+		log.Fatal(err)
+
+		var resX helper.Resultado
+		resX.ErrorCode = "405 Error creating user"
+		resX.ErrorDescription = "Error adding user"
+		resX.IsSuccessful = "N"
+		return resX
+
+	}
+
+	var res helper.Resultado
+	res.ErrorCode = "200 OK"
+	res.ErrorDescription = "User added"
+	res.IsSuccessful = "Y"
+
+	return res
+}
+
+// Find is to find stuff
+func Find(redisclient *redis.Client, userid string) (Credentials, string) {
+
+	database := new(helper.DatabaseX)
+	database.Collection = "security"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+
+	dishnull := Credentials{}
+
+	session, err := mgo.Dial(database.Location)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+
+	c := session.DB(database.Database).C(database.Collection)
+
+	result := []Credentials{}
+	err1 := c.Find(bson.M{"userid": userid}).All(&result)
+	if err1 != nil {
+		log.Fatal(err1)
+	}
+
+	var numrecsel = len(result)
+
+	if numrecsel <= 0 {
+		return dishnull, "404 Not found"
+	}
+
+	return result[0], "200 OK"
+}
+
+// Userupdate is
+func Userupdate(redisclient *redis.Client, userUpdate Credentials) helper.Resultado {
+
+	database := new(helper.DatabaseX)
+	database.Collection = "security"
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+
+	session, err := mgo.Dial(database.Location)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+
+	collection := session.DB(database.Database).C(database.Collection)
+
+	err = collection.Update(bson.M{"name": userUpdate.UserID}, userUpdate)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var res helper.Resultado
+	res.ErrorCode = "0001"
+	res.ErrorDescription = "Something Happened"
+	res.IsSuccessful = "Y"
+
+	return res
+}
+
+// ValidateUserCredentials is to find stuff
+func ValidateUserCredentials(redisclient *redis.Client, userid string, password string) (string, string) {
+
+	var us, _ = Find(redisclient, userid)
+
+	hashedpass := Hashstring(password)
+
+	if hashedpass == us.Password {
+		var jwt = getjwtfortoday(userid)
+		return jwt, "200 OK"
+	}
+
+	return "Error", "404 Error"
+}
+
+func keyfortheday(day int) string {
+
+	var key = "De tudo, ao meu amor serei atento antes" +
+		"E com tal zelo, e sempre, e tanto" +
+		"Que mesmo em face do maior encanto" +
+		"Dele se encante mais meu pensamento" +
+		"Quero vivê-lo em cada vão momento" +
+		"E em seu louvor hei de espalhar meu canto" +
+		"E rir meu riso e derramar meu pranto" +
+		"Ao seu pesar ou seu contentamento" +
+		"E assim quando mais tarde me procure" +
+		"Quem sabe a morte, angústia de quem vive" +
+		"Quem sabe a solidão, fim de quem ama" +
+		"Eu possa lhe dizer do amor (que tive):" +
+		"Que não seja imortal, posto que é chama" +
+		"Mas que seja infinito enquanto dure"
+
+	stringSlice := strings.Split(key, " ")
+	var stringSliceFinal []string
+
+	x := 0
+	for i := 0; i < len(stringSlice); i++ {
+		if len(stringSlice[0]) > 3 {
+			stringSliceFinal[x] = stringSlice[i]
+			x++
+		}
+	}
+
+	return stringSliceFinal[day]
+}
+
+// getjwtfortoday
+// this is just a reference key
+// the roles, date and user will be stored at the server
+func getjwtfortoday(user string) string {
+
+	// Generate Key
+	_, _, day := time.Now().Date()
+	s := keyfortheday(day)
+	s += user
+	h := sha1.New()
+	h.Write([]byte(s))
+
+	sha1hash := hex.EncodeToString(h.Sum(nil))
+
+	// hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	return sha1hash
+}
+
+func Hashstring(str string) string {
+
+	s := str
+	h := sha1.New()
+	h.Write([]byte(s))
+
+	sha1hash := hex.EncodeToString(h.Sum(nil))
+
+	return sha1hash
+}

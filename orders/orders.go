@@ -13,17 +13,17 @@ import (
 
 // Order is what the client wants
 type Order struct {
-	SystemID     bson.ObjectId `json:"id"        bson:"_id,omitempty"`
-	ID           string        // random ID for order, yet to define algorithm
-	ClientName   string        // Client Name
-	ClientID     string        // Client ID in case they logon
-	Date         string        // Order Date
-	Time         string        // Order Time
-	Status       string        // Open, Completed, Cancelled
-	EatMode      string        // EatIn, TakeAway, Delivery
-	Foodeatplace string        // EatIn, TakeAway, Delivery
-	TotalGeral   string        // Delivery phone number
-	Items        []Item
+	SystemID   bson.ObjectId `json:"id"        bson:"_id,omitempty"`
+	ID         string        // random ID for order, yet to define algorithm
+	ClientName string        // Client Name
+	ClientID   string        // Client ID in case they logon
+	Atendente  string        // Pessoa atendendo
+	Date       string        // Order Date
+	Time       string        // Order Time
+	Status     string        // Placed, Serving, Completed, Removed
+	EatMode    string        // EatIn, TakeAway, Delivery
+	TotalGeral string        // Delivery phone number
+	Items      []Item
 }
 
 // Item represents a single item of an order

@@ -54,7 +54,7 @@ func main() {
 	//
 	http.Handle("/", router) // setting router rule
 
-	err := http.ListenAndServe(APIServerPort, nil) // setting listening port
+	err := http.ListenAndServe(":"+APIServerPort, nil) // setting listening port
 	if err != nil {
 		//using the mux router
 		log.Fatal("ListenAndServe: ", err)
@@ -63,7 +63,7 @@ func main() {
 
 //#region Caching
 
-func loadreferencedatainredis() {
+func loadreferencedatainredisX() {
 
 	// err = client.Set("MongoDB.Location", "{\"MongoDB.Location\":\"192.168.2.180\"}", 0).Err()
 	// err = redisclient.Set("API.MongoDB.Location", "192.168.2.180", 0).Err()
@@ -72,6 +72,19 @@ func loadreferencedatainredis() {
 	// err = redisclient.Set("API.APIServer.IPAddress", "192.168.2.170", 0).Err()
 	err = redisclient.Set("API.APIServer.IPAddress", "localhost", 0).Err()
 	err = redisclient.Set("API.APIServer.Port", ":1520", 0).Err()
+}
+
+// This is reading from ini file
+//
+func loadreferencedatainredis() {
+
+	variable := helper.Readfileintostruct()
+	err = redisclient.Set("API.MongoDB.Location", variable.APIMongoDBLocation, 0).Err()
+	err = redisclient.Set("API.MongoDB.Database", variable.APIMongoDBDatabase, 0).Err()
+	err = redisclient.Set("API.APIServer.Port", variable.APIAPIServerPort, 0).Err()
+	err = redisclient.Set("API.APIServer.IPAddress", variable.APIAPIServerIPAddress, 0).Err()
+	err = redisclient.Set("Web.Debug", variable.WEBDebug, 0).Err()
+
 }
 
 type rediscachevalues struct {

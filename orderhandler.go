@@ -69,7 +69,7 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 		OrderClientName string // Client Name for the order
 		OrderDate       string // Order Date
 		OrderTime       string // Order Time
-		Foodeatplace    string // Delivery, Eat In, Take Away
+		EatMode         string // Delivery, Eat In, Take Away
 		Status          string // Status
 		Pratos          []dcOrderItem
 	}
@@ -103,6 +103,8 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	objtoactionMAP.ClientName = objtoaction.OrderClientName
 	objtoactionMAP.Date = objtoaction.OrderDate
 	objtoactionMAP.Time = objtoaction.OrderTime
+	objtoactionMAP.Status = objtoaction.Status
+	objtoactionMAP.EatMode = objtoaction.EatMode
 
 	var slen = len(objtoaction.Pratos)
 	objtoactionMAP.Items = make([]orders.Item, slen)
