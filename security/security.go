@@ -140,16 +140,17 @@ func Userupdate(redisclient *redis.Client, userUpdate Credentials) helper.Result
 // ValidateUserCredentials is to find stuff
 func ValidateUserCredentials(redisclient *redis.Client, userid string, password string) (string, string) {
 
+	// look for user
 	var us, _ = Find(redisclient, userid)
 
-	hashedpass := Hashstring(password)
+	var passwordhashed = Hashstring(password)
 
-	if hashedpass == us.Password {
-		var jwt = getjwtfortoday(userid)
-		return jwt, "200 OK"
+	if passwordhashed != us.Password {
+		return "Error", "404 Error"
 	}
 
-	return "Error", "404 Error"
+	var jwt = getjwtfortoday(userid)
+	return jwt, "200 OK"
 }
 
 func keyfortheday(day int) string {
@@ -170,11 +171,11 @@ func keyfortheday(day int) string {
 		"Mas que seja infinito enquanto dure"
 
 	stringSlice := strings.Split(key, " ")
-	var stringSliceFinal []string
+	var stringSliceFinal [100]string
 
 	x := 0
 	for i := 0; i < len(stringSlice); i++ {
-		if len(stringSlice[0]) > 3 {
+		if len(stringSlice[i]) > 3 {
 			stringSliceFinal[x] = stringSlice[i]
 			x++
 		}

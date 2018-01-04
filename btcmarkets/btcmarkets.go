@@ -63,7 +63,7 @@ func GetAll(redisclient *redis.Client, currency string, rows string) []BalanceCr
 
 	rowsi, err := strconv.Atoi(rows)
 	if rowsi == 0 {
-		rowsi = 1440
+		rowsi = 100
 	}
 
 	database := new(helper.DatabaseX)

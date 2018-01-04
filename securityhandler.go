@@ -22,6 +22,10 @@ func Hsecuritylogin(httpwriter http.ResponseWriter, req *http.Request) {
 
 	token, _ := security.ValidateUserCredentials(redisclient, userid, password)
 
+	if token == "Error" {
+		httpwriter.WriteHeader(http.StatusInternalServerError)
+		httpwriter.Write([]byte("500 - Something bad happened!"))
+	}
 	json.NewEncoder(httpwriter).Encode(&token)
 
 }
@@ -36,18 +40,15 @@ func Hsecuritysignup(httpwriter http.ResponseWriter, req *http.Request) {
 	userInsert.PasswordValidate = req.FormValue("passwordvalidate")
 
 	token := ""
-	if userInsert.Password == userInsert.PasswordValidate {
-		_, resfind := security.Find(redisclient, userInsert.UserID)
-		if resfind == "200 OK" {
-			return
-		}
-		// Add user
-		results := security.Useradd(redisclient, userInsert)
-		if results.ErrorCode == "200 OK" {
-			token = results.ReturnedValue
-		}
-	} else {
-		token = "Fix password"
+	_, resfind := security.Find(redisclient, userInsert.UserID)
+	if resfind == "200 OK" {
+		token = "User already exists"
+	}
+
+	// Add user
+	results := security.Useradd(redisclient, userInsert)
+	if results.ErrorCode == "200 OK" {
+		token = results.ReturnedValue
 	}
 
 	json.NewEncoder(httpwriter).Encode(&token)
