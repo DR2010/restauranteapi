@@ -92,6 +92,7 @@ type rediscachevalues struct {
 	MongoDBDatabase string
 	APIServerPort   string
 	APIServerIP     string
+	WebDebug        string
 }
 
 //#endregion Caching
@@ -110,8 +111,9 @@ func getcachedvalues(httpwriter http.ResponseWriter, req *http.Request) {
 	rv.MongoDBDatabase, _ = redisclient.Get("API.MongoDB.Database").Result()
 	rv.APIServerPort, _ = redisclient.Get("API.APIServer.Port").Result()
 	rv.APIServerIP, _ = redisclient.Get("API.APIServer.IPAddress").Result()
+	rv.WebDebug, _ = redisclient.Get("Web.Debug").Result()
 
-	keys := make([]Cache, 4)
+	keys := make([]Cache, 5)
 	keys[0].Key = "API.MongoDB.Location"
 	keys[0].Value = rv.MongoDBLocation
 
@@ -123,6 +125,9 @@ func getcachedvalues(httpwriter http.ResponseWriter, req *http.Request) {
 
 	keys[3].Key = "API.APIServer.IPAddress"
 	keys[3].Value = rv.APIServerIP
+
+	keys[4].Key = "Web.Debug"
+	keys[4].Value = rv.WebDebug
 
 	json.NewEncoder(httpwriter).Encode(&keys)
 }

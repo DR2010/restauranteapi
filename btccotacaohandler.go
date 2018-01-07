@@ -47,3 +47,16 @@ func Hbtccotacaolist(httpwriter http.ResponseWriter, req *http.Request) {
 
 	json.NewEncoder(httpwriter).Encode(&cotacaolist)
 }
+
+// Hbtccotacaolistdate is a function to return a list of dishes
+func Hbtccotacaolistdate(httpwriter http.ResponseWriter, req *http.Request) {
+
+	params := req.URL.Query()
+	var currency = params.Get("currency")
+	var yeardaymonth = params.Get("yeardaymonth")
+	var yeardaymonthend = params.Get("yeardaymonthend")
+
+	var cotacaolist = btcmarkets.GetDayStats(redisclient, currency, yeardaymonth, yeardaymonthend)
+
+	json.NewEncoder(httpwriter).Encode(&cotacaolist)
+}
