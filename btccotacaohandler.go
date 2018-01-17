@@ -6,10 +6,44 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"restauranteapi/btcmarkets"
 	"time"
 )
+
+// Hbtcpreorderadd add orders
+func Hbtcpreorderadd(httpwriter http.ResponseWriter, req *http.Request) {
+
+	defer req.Body.Close()
+	bodybyte, _ := ioutil.ReadAll(req.Body)
+
+	var objtoaction btcmarkets.DCPreOrder
+
+	err = json.Unmarshal(bodybyte, &objtoaction)
+
+	ret := btcmarkets.PreOrderAdd(redisclient, objtoaction)
+
+	if ret.IsSuccessful == "Y" {
+		// do something
+
+		fmt.Println("Order added successfully:")
+
+		type RespAddOrder struct {
+			ID string
+		}
+
+	}
+
+	return
+}
+
+// Hbtcpreorderlist is a function to return a list of dishes
+func Hbtcpreorderlist(httpwriter http.ResponseWriter, req *http.Request) {
+	var cotacaolist = btcmarkets.PreorderGetAll(redisclient)
+	json.NewEncoder(httpwriter).Encode(&cotacaolist)
+}
 
 // Hbtccotacaoadd is
 func Hbtccotacaoadd(httpwriter http.ResponseWriter, req *http.Request) {
@@ -20,7 +54,11 @@ func Hbtccotacaoadd(httpwriter http.ResponseWriter, req *http.Request) {
 	cotacaotoadd.Balance = req.FormValue("cryptoBalance")
 	cotacaotoadd.CotacaoAtual = req.FormValue("cryptoCotacaoAtual")
 	cotacaotoadd.ValueInCashAUD = req.FormValue("cryptoValueInCashAUD")
+	cotacaotoadd.BestAsk = req.FormValue("cryptoBestAsk")
+	cotacaotoadd.BestBid = req.FormValue("cryptoBestBid")
+	cotacaotoadd.Volume24 = req.FormValue("cryptoVolume24")
 	cotacaotoadd.DateTime = time.Now().String()
+	cotacaotoadd.Rotina = req.FormValue("rotina")
 
 	// params := req.URL.Query()
 	// cotacaotoadd.Currency = params.Get("Currency")
@@ -44,6 +82,14 @@ func Hbtccotacaolist(httpwriter http.ResponseWriter, req *http.Request) {
 	var rows = params.Get("rows")
 
 	var cotacaolist = btcmarkets.GetAll(redisclient, currency, rows)
+
+	json.NewEncoder(httpwriter).Encode(&cotacaolist)
+}
+
+// Hbtcimport is a function to return a list of dishes
+func Hbtcimport(httpwriter http.ResponseWriter, req *http.Request) {
+
+	var cotacaolist = btcmarkets.Import(redisclient)
 
 	json.NewEncoder(httpwriter).Encode(&cotacaolist)
 }

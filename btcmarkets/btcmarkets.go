@@ -22,7 +22,13 @@ type BalanceCrypto struct {
 	Currency       string // Currency
 	CotacaoAtual   string // Cotacao
 	ValueInCashAUD string // Value in AUD
+	BestBid        string
+	BestAsk        string
+	LastPrice      string
+	Instrument     string
+	Volume24       string
 	DateTime       string // date time
+	Rotina         string // date time
 	Date           string // date time
 }
 
@@ -100,7 +106,8 @@ func GetAll(redisclient *redis.Client, currency string, rows string) []BalanceCr
 	// db.getCollection('btccotacao').find({}).sort({_id:-1}).limit(15);
 	// err = c.Find(bson.M{"currency": currency}).All(&results)
 	// err = c.Find(bson.M{"name": "Ale"}).Sort("-timestamp").All(&results)
-	err = c.Find(bson.M{"currency": currency}).Sort("-_id").Limit(rowsi).All(&results)
+	// err = c.Find(bson.M{"currency": currency}).Sort("-_id").Limit(rowsi).All(&results)
+	err = c.Find(bson.M{"currency": currency}).Sort("-datetime").Limit(rowsi).All(&results)
 	if err != nil {
 		// TODO: Do something about the error
 	} else {
@@ -150,7 +157,8 @@ func GetDayStats(redisclient *redis.Client, currency string, yearmonthday string
 	// err = collection.Find(bson.M{  "date": yearmonthday,    "currency": currency}).All(&results)
 	// err = collection.Find(bson.M{"datetime": bson.M{"$gt": yearmonthday}}).All(&results)
 
-	err = collection.Find(bson.M{"datetime": bson.M{"$gt": yearmonthday, "$lt": yearmonthdayend}}).Sort("-_id").All(&results)
+	//err = collection.Find(bson.M{"currency": currency, "datetime": bson.M{"$gte": yearmonthday, "$lte": yearmonthdayend}}).Sort("-_id").All(&results)
+	err = collection.Find(bson.M{"currency": currency, "datetime": bson.M{"$gte": yearmonthday, "$lte": yearmonthdayend}}).Sort("-datetime").All(&results)
 
 	// Below works in MongoDB Robo 3T interface
 	//
@@ -205,4 +213,42 @@ func UpdateAllRows(redisclient *redis.Client) []BalanceCrypto {
 	}
 
 	return results
+}
+
+// Import works
+func Import(redisclient *redis.Client) []BalanceCrypto {
+
+	databaseHome := new(helper.DatabaseX)
+
+	databaseHome.Collection = "btccotacao"
+
+	databaseHome.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	databaseHome.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+
+	// Home PC
+	databaseHome.Location = "192.168.2.170"
+
+	session, err := mgo.Dial(databaseHome.Location)
+
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+
+	c := session.DB(databaseHome.Database).C(databaseHome.Collection)
+
+	var results []BalanceCrypto
+
+	err = c.Find(nil).All(&results)
+	if err != nil {
+		// TODO: Do something about the error
+		log.Fatal(err)
+	} else {
+		return results
+	}
+
+	return nil
 }

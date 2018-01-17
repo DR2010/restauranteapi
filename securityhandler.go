@@ -26,6 +26,15 @@ func Hsecuritylogin(httpwriter http.ResponseWriter, req *http.Request) {
 		httpwriter.WriteHeader(http.StatusInternalServerError)
 		httpwriter.Write([]byte("500 - Something bad happened!"))
 	}
+
+	// Get user roles
+	// Store jwt as key on cache
+	// Store user roles also
+	//
+	var usercredentials security.Credentials
+	usercredentials.UserID = userid
+	// usercredentials.Roles = []string
+
 	json.NewEncoder(httpwriter).Encode(&token)
 
 }
