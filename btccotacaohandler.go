@@ -86,6 +86,35 @@ func Hbtccotacaolist(httpwriter http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(httpwriter).Encode(&cotacaolist)
 }
 
+// Hbtccotacaolistbyday is a list to group it all
+// func Hbtccotacaolistbyday(httpwriter http.ResponseWriter, req *http.Request) {
+
+// 	params := req.URL.Query()
+// 	var currency = params.Get("currency")
+
+// 	// get all lines
+// 	var cotacaolist = btcmarkets.GetAllNoLimit(redisclient, currency)
+
+// 	// loop through lines and get all the
+
+// 	var coindaymax = 0
+// 	var coindaymin = 0
+// 	var coindayclosing = 0
+
+// 	for x := 1; x < len(cotacaolist); x++ {
+
+// 		balance, _ := strconv.ParseFloat(cotacaolist[x].Balance, 32)
+// 		balance1, _ := strconv.ParseFloat(cotacaolist[x].Balance, 32)
+
+// 		var coindaymax = (cotacaolist[x].Balance)
+// 		var coindaymin = 0
+// 		var coindayclosing = 0
+
+// 	}
+
+// 	json.NewEncoder(httpwriter).Encode(&cotacaolist)
+// }
+
 // Hbtcimport is a function to return a list of dishes
 func Hbtcimport(httpwriter http.ResponseWriter, req *http.Request) {
 
