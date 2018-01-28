@@ -25,7 +25,15 @@ type Credentials struct {
 	Name             string        //
 	Password         string        //
 	PasswordValidate string        //
-	Roles            []string      //
+	ApplicationID    string        //
+	JWT              string        //
+	ClaimSet         []Claim       //
+}
+
+// Claim is
+type Claim struct {
+	Type  string
+	Value string
 }
 
 // Useradd is for export
@@ -151,6 +159,32 @@ func ValidateUserCredentials(redisclient *redis.Client, userid string, password 
 
 	var jwt = getjwtfortoday(userid)
 	return jwt, "200 OK"
+}
+
+// ValidateUserCredentialsV2 is to find stuff
+func ValidateUserCredentialsV2(redisclient *redis.Client, userid string, password string) (Credentials, string) {
+
+	var usercredentials Credentials
+	usercredentials.UserID = userid
+	usercredentials.ApplicationID = "None"
+	usercredentials.JWT = "Error"
+
+	// look for user
+	var us, _ = Find(redisclient, userid)
+
+	var passwordhashed = Hashstring(password)
+
+	if passwordhashed != us.Password {
+		return usercredentials, "404 Error"
+	}
+
+	// Get the JWT
+	var jwt = getjwtfortoday(userid)
+
+	// Assign the JWT to the return JSON object Credentials
+	us.JWT = jwt
+
+	return us, "200 OK"
 }
 
 func keyfortheday(day int) string {

@@ -1,6 +1,6 @@
 // Package main is the main package
 // -------------------------------------
-// .../restauranteapi/btccotacaohandler.go
+// .../restauranteapi/securityhandler.go
 // -------------------------------------
 package main
 
@@ -39,6 +39,26 @@ func Hsecuritylogin(httpwriter http.ResponseWriter, req *http.Request) {
 
 }
 
+// HsecurityloginV2 is
+func HsecurityloginV2(httpwriter http.ResponseWriter, req *http.Request) {
+
+	var userid = req.FormValue("userid")
+	var password = req.FormValue("password")
+
+	// params := req.URL.Query()
+	// cotacaotoadd.Currency = params.Get("Currency")
+	// cotacaotoadd.Balance = params.Get("Balance")
+
+	credentialwithtoken, _ := security.ValidateUserCredentialsV2(redisclient, userid, password)
+
+	if credentialwithtoken.JWT == "Error" {
+		httpwriter.WriteHeader(http.StatusInternalServerError)
+		httpwriter.Write([]byte("500 - Something bad happened!"))
+	}
+
+	json.NewEncoder(httpwriter).Encode(&credentialwithtoken)
+}
+
 // Hsecuritysignup is
 func Hsecuritysignup(httpwriter http.ResponseWriter, req *http.Request) {
 
@@ -47,6 +67,15 @@ func Hsecuritysignup(httpwriter http.ResponseWriter, req *http.Request) {
 	userInsert.UserID = req.FormValue("userid")
 	userInsert.Password = req.FormValue("password")
 	userInsert.PasswordValidate = req.FormValue("passwordvalidate")
+	userInsert.ApplicationID = req.FormValue("applicationid")
+
+	userInsert.ClaimSet = make([]security.Claim, 3)
+	userInsert.ClaimSet[0].Type = "USERTYPE"
+	userInsert.ClaimSet[0].Value = "ADMIN"
+	userInsert.ClaimSet[1].Type = "USERID"
+	userInsert.ClaimSet[1].Value = userInsert.UserID
+	userInsert.ClaimSet[2].Type = "APPLICATIONID"
+	userInsert.ClaimSet[2].Value = req.FormValue("applicationid")
 
 	token := ""
 	_, resfind := security.Find(redisclient, userInsert.UserID)
