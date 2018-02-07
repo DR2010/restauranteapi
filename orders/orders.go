@@ -30,10 +30,8 @@ type Order struct {
 type Item struct {
 	ID         string // Sequential number of the item
 	PratoName  string // Dish ID or unique name from "Dishes"
-	GlutenFree string // Just Yes or No in case the dish has gluten free options
-	DiaryFree  string // Just Yes or No in case the dish has this option
-	Price      string // Individual price
 	Quantidade string // Individual price
+	Price      string // Individual price
 	Total      string // Total Price
 	Tax        string // GST
 }
@@ -183,7 +181,7 @@ func Update(redisclient *redis.Client, objtoupdate Order) helper.Resultado {
 
 	collection := session.DB(database.Database).C(database.Collection)
 
-	err = collection.Update(bson.M{"name": objtoupdate.ID}, objtoupdate)
+	err = collection.Update(bson.M{"id": objtoupdate.ID}, objtoupdate)
 
 	if err != nil {
 		log.Fatal(err)

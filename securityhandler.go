@@ -71,7 +71,7 @@ func Hsecuritysignup(httpwriter http.ResponseWriter, req *http.Request) {
 
 	userInsert.ClaimSet = make([]security.Claim, 3)
 	userInsert.ClaimSet[0].Type = "USERTYPE"
-	userInsert.ClaimSet[0].Value = "ADMIN"
+	userInsert.ClaimSet[0].Value = "BASIC"
 	userInsert.ClaimSet[1].Type = "USERID"
 	userInsert.ClaimSet[1].Value = userInsert.UserID
 	userInsert.ClaimSet[2].Type = "APPLICATIONID"

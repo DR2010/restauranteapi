@@ -1,9 +1,13 @@
 package helper
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
+	"strings"
 
 	"github.com/go-redis/redis"
 )
@@ -62,4 +66,50 @@ func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+type PlayerRegistrationFile struct {
+	FFA  string
+	Name string
+	DOB  string
+}
+
+// Capitalfootball is
+func Capitalfootball(redisclient *redis.Client) []PlayerRegistrationFile {
+
+	file, err := os.Open("capitalfootball.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	var playerlist []PlayerRegistrationFile
+
+	scanner := bufio.NewScanner(file)
+
+	playerlist = make([]PlayerRegistrationFile, 52)
+
+	i := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		fmt.Println(scanner.Text())
+
+		tmp := strings.Split(line, ",")
+
+		i++
+		playerlist[i] = PlayerRegistrationFile{}
+		playerlist[i].FFA = strings.Trim(tmp[0], " ")
+		playerlist[i].Name = strings.Trim(tmp[1], " ")
+		playerlist[i].DOB = strings.Trim(tmp[2], " ")
+
+		fmt.Println(playerlist[i].FFA)
+
+		err = redisclient.Set(playerlist[i].FFA, playerlist[i].Name, 0).Err()
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return playerlist
 }

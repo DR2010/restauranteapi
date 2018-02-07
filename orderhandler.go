@@ -60,18 +60,18 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	type dcOrderItem struct {
 		Pratoname  string //
 		Quantidade string //
-		Preco      string //
+		Price      string //
 	}
 
 	type dcOrder struct {
-		OrderID         string // random ID for order, yet to define algorithm
-		OrderClientID   string // Client ID in case they logon - later
-		OrderClientName string // Client Name for the order
-		OrderDate       string // Order Date
-		OrderTime       string // Order Time
-		EatMode         string // Delivery, Eat In, Take Away
-		Status          string // Status
-		Pratos          []dcOrderItem
+		ID         string // random ID for order, yet to define algorithm
+		ClientName string // Client Name for the order
+		ClientID   string // Client ID in case they logon - later
+		Date       string // Order Date
+		Time       string // Order Time
+		EatMode    string // Delivery, Eat In, Take Away
+		Status     string // Status
+		Items      []dcOrderItem
 	}
 
 	var objtoaction dcOrder
@@ -81,10 +81,9 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	for tries < 1000 {
 
 		rand.Seed(time.Now().UTC().UnixNano())
-		objtoaction.OrderID = strconv.Itoa(rand.Intn(100000))
-		objtoaction.OrderClientID = ""
+		objtoaction.ID = strconv.Itoa(rand.Intn(100000))
 
-		_, recordstatus := orders.Find(redisclient, objtoaction.OrderID)
+		_, recordstatus := orders.Find(redisclient, objtoaction.ID)
 
 		if recordstatus == "200 OK" {
 			fmt.Println("recordstatus")
@@ -98,15 +97,15 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	}
 
 	objtoactionMAP := orders.Order{}
-	objtoactionMAP.ID = objtoaction.OrderID
-	objtoactionMAP.ClientID = objtoaction.OrderClientID
-	objtoactionMAP.ClientName = objtoaction.OrderClientName
-	objtoactionMAP.Date = objtoaction.OrderDate
-	objtoactionMAP.Time = objtoaction.OrderTime
+	objtoactionMAP.ID = objtoaction.ID
+	objtoactionMAP.ClientID = objtoaction.ClientID
+	objtoactionMAP.ClientName = objtoaction.ClientName
+	objtoactionMAP.Date = objtoaction.Date
+	objtoactionMAP.Time = objtoaction.Time
 	objtoactionMAP.Status = objtoaction.Status
 	objtoactionMAP.EatMode = objtoaction.EatMode
 
-	var slen = len(objtoaction.Pratos)
+	var slen = len(objtoaction.Items)
 	objtoactionMAP.Items = make([]orders.Item, slen)
 
 	var totalgeral = 0
@@ -116,21 +115,23 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 	var destindex = 0
 
-	for index, element := range objtoaction.Pratos {
+	for index, element := range objtoaction.Items {
 		// index is the index where we are
 		// element is the element from someSlice for where we are
 
-		if index == 0 {
-			continue
-		}
+		// if index == 0 {
+		// 	continue
+		// }
 
-		destindex = index - 1
+		// destindex = index - 1
+
+		destindex = index
 
 		objtoactionMAP.Items[destindex].PratoName = element.Pratoname
-		objtoactionMAP.Items[destindex].Price = element.Preco
+		objtoactionMAP.Items[destindex].Price = element.Price
 		objtoactionMAP.Items[destindex].Quantidade = element.Quantidade
 
-		prc, _ := strconv.Atoi(element.Preco)
+		prc, _ := strconv.Atoi(element.Price)
 		qty, _ := strconv.Atoi(element.Quantidade)
 		tot := prc * qty
 		totalgeral = totalgeral + tot
@@ -144,14 +145,14 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	if ret.IsSuccessful == "Y" {
 		// do something
 
-		fmt.Println("Order added successfully:" + objtoaction.OrderClientName)
+		fmt.Println("Order added successfully:" + objtoaction.ClientName)
 
 		type RespAddOrder struct {
 			ID string
 		}
 
 		// return value
-		obj := &RespAddOrder{ID: objtoaction.OrderID}
+		obj := &RespAddOrder{ID: objtoaction.ID}
 		bresp, _ := json.Marshal(obj)
 
 		fmt.Fprintf(httpwriter, string(bresp)) // write data to response
@@ -160,20 +161,105 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	return
 }
 
-// Hupdate updates orders
-func Hupdate(httpwriter http.ResponseWriter, req *http.Request) {
+// Horderupdate update orders
+func Horderupdate(httpwriter http.ResponseWriter, req *http.Request) {
 
-	objtoaction := orders.Order{}
+	defer req.Body.Close()
+	bodybyte, _ := ioutil.ReadAll(req.Body)
+	// bodystr := string(bodybyte[:])
 
-	objtoaction.ClientID = req.FormValue("orderClientID") // This is the key, must be unique
-	objtoaction.ClientName = req.FormValue("orderClientName")
-	objtoaction.Date = req.FormValue("orderDate")
+	type dcOrderItem struct {
+		Pratoname  string //
+		Quantidade string //
+		Preco      string //
+	}
 
-	ret := orders.Update(redisclient, objtoaction)
+	// Esta estrutura e' usada pelo Javascript para adicionar e chamar a API
+	// Tem que manter a estrutura do Javascript in sync com o golang
+	// Agora nao esta em sync. 8/2/2018
+
+	// type dcOrder struct {
+	// 	OrderID         string // random ID for order, yet to define algorithm
+	// 	OrderClientID   string // Client ID in case they logon - later
+	// 	OrderClientName string // Client Name for the order
+	// 	OrderDate       string // Order Date
+	// 	OrderTime       string // Order Time
+	// 	EatMode         string // Delivery, Eat In, Take Away
+	// 	Status          string // Status
+	// 	Pratos          []dcOrderItem
+	// }
+
+	var objtoaction orders.Order
+	err = json.Unmarshal(bodybyte, &objtoaction)
+
+	_, recordstatus := orders.Find(redisclient, objtoaction.ID)
+
+	if recordstatus == "200 OK" {
+		fmt.Println("recordstatus")
+		fmt.Println(recordstatus)
+	}
+
+	objtoactionMAP := orders.Order{}
+	objtoactionMAP.ID = objtoaction.ID
+	objtoactionMAP.ClientID = objtoaction.ClientID
+	objtoactionMAP.ClientName = objtoaction.ClientName
+	objtoactionMAP.Date = objtoaction.Date
+	objtoactionMAP.Time = objtoaction.Time
+	objtoactionMAP.Status = objtoaction.Status
+	objtoactionMAP.EatMode = objtoaction.EatMode
+
+	var slen = len(objtoaction.Items)
+	objtoactionMAP.Items = make([]orders.Item, slen)
+
+	var totalgeral = 0
+
+	// I have to remove the header coming from the caller.
+	// Perhaps the caller should suppress the header somehow
+
+	var destindex = 0
+
+	for index, element := range objtoaction.Items {
+		// index is the index where we are
+		// element is the element from someSlice for where we are
+
+		if index == 0 {
+			continue
+		}
+
+		destindex = index - 1
+
+		objtoactionMAP.Items[destindex].PratoName = element.PratoName
+		objtoactionMAP.Items[destindex].Price = element.Price
+		objtoactionMAP.Items[destindex].Quantidade = element.Quantidade
+
+		prc, _ := strconv.Atoi(element.Price)
+		qty, _ := strconv.Atoi(element.Price)
+		tot := prc * qty
+		totalgeral = totalgeral + tot
+
+		objtoactionMAP.Items[destindex].Total = strconv.Itoa(tot)
+	}
+	objtoactionMAP.TotalGeral = strconv.Itoa(totalgeral)
+
+	ret := orders.Update(redisclient, objtoactionMAP)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
+
+		fmt.Println("Order added successfully:" + objtoaction.ClientName)
+
+		type RespAddOrder struct {
+			ID string
+		}
+
+		// return value
+		obj := &RespAddOrder{ID: objtoaction.ID}
+		bresp, _ := json.Marshal(obj)
+
+		fmt.Fprintf(httpwriter, string(bresp)) // write data to response
 	}
+
+	return
 }
 
 // Hdelete delete orders

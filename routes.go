@@ -66,6 +66,7 @@ var routes = Routes{
 	Route{"getcachedvalues", "GET", "/getcachedvalues", getcachedvalues},
 	Route{"orderlist", "GET", "/orderlist", OrderList},
 	Route{"orderadd", "POST", "/orderadd", Horderadd},
+	Route{"orderadd", "POST", "/orderupdate", Horderupdate},
 	Route{"orderfind", "GET", "/orderfind", Horderfind},
 	// -----------------------------------------------------------------
 	// Route{"securitylogin", "POST", "/securitylogin", Hsecuritylogin},

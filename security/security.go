@@ -28,6 +28,7 @@ type Credentials struct {
 	ApplicationID    string        //
 	JWT              string        //
 	ClaimSet         []Claim       //
+	Status           string        // It is set to Active manually by Daniel 'Active' or Inactive.
 }
 
 // Claim is
@@ -168,23 +169,34 @@ func ValidateUserCredentialsV2(redisclient *redis.Client, userid string, passwor
 	usercredentials.UserID = userid
 	usercredentials.ApplicationID = "None"
 	usercredentials.JWT = "Error"
+	usercredentials.Status = "Error"
 
 	// look for user
-	var us, _ = Find(redisclient, userid)
+	var userdatabase, _ = Find(redisclient, userid)
 
 	var passwordhashed = Hashstring(password)
 
-	if passwordhashed != us.Password {
+	if passwordhashed != userdatabase.Password {
+		usercredentials.Status = "404 Error invalid password"
 		return usercredentials, "404 Error"
+	}
+
+	if userdatabase.ApplicationID == "Belnorth" {
+		if userdatabase.Status != "Active" {
+			// If I have not make the user active
+			// initially only set to Belnorth
+			usercredentials.Status = "404 Error Belnorth User not active"
+			return usercredentials, "404 Error"
+		}
 	}
 
 	// Get the JWT
 	var jwt = getjwtfortoday(userid)
 
 	// Assign the JWT to the return JSON object Credentials
-	us.JWT = jwt
+	userdatabase.JWT = jwt
 
-	return us, "200 OK"
+	return userdatabase, "200 OK"
 }
 
 func keyfortheday(day int) string {
