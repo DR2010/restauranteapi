@@ -29,6 +29,7 @@ type Credentials struct {
 	JWT              string        //
 	ClaimSet         []Claim       //
 	Status           string        // It is set to Active manually by Daniel 'Active' or Inactive.
+	IsAdmin          string        // It is set to Active manually by Daniel 'Active' or Inactive.
 }
 
 // Claim is
@@ -196,6 +197,18 @@ func ValidateUserCredentialsV2(redisclient *redis.Client, userid string, passwor
 	// Assign the JWT to the return JSON object Credentials
 	userdatabase.JWT = jwt
 
+	userdatabase.IsAdmin = "No"
+	// Check if user is admin
+	for x := 0; x < len(userdatabase.ClaimSet); x++ {
+		if userdatabase.ClaimSet[x].Type == "USERTYPE" {
+			if userdatabase.ClaimSet[x].Value == "ADMIN" {
+				// list all if user is admin
+				userdatabase.IsAdmin = "Yes"
+				break
+			}
+		}
+	}
+
 	return userdatabase, "200 OK"
 }
 
@@ -212,7 +225,7 @@ func keyfortheday(day int) string {
 		"E assim quando mais tarde me procure" +
 		"Quem sabe a morte, angústia de quem vive" +
 		"Quem sabe a solidão, fim de quem ama" +
-		"Eu possa lhe dizer do amor (que tive):" +
+		"Eu possa lhe dizer do amor que tive" +
 		"Que não seja imortal, posto que é chama" +
 		"Mas que seja infinito enquanto dure"
 

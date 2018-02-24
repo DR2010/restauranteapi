@@ -27,6 +27,7 @@ type PreOrder struct {
 	DateTime string
 }
 
+// DCPreOrder handling preorders
 type DCPreOrder struct {
 	Preorders []PreOrder
 }

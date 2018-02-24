@@ -9,25 +9,16 @@ import (
 	"log"
 	helper "restauranteapi/helper"
 
+	dishes "restauranteapi/models"
+
 	"github.com/go-redis/redis"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-// Dish is to be exported
-type Dish struct {
-	SystemID   bson.ObjectId `json:"id"        bson:"_id,omitempty"`
-	Name       string        // name of the dish - this is the KEY, must be unique
-	Type       string        // type of dish, includes drinks and deserts
-	Price      string        // preco do prato multiplicar por 100 e nao ter digits
-	GlutenFree string        // Gluten free dishes
-	DairyFree  string        // Dairy Free dishes
-	Vegetarian string        // Vegeterian dishes
-}
-
 // Dishadd is for export
-func Dishadd(redisclient *redis.Client, dishInsert Dish) helper.Resultado {
+func Dishadd(redisclient *redis.Client, dishInsert dishes.Dish) helper.Resultado {
 
 	database := new(helper.DatabaseX)
 	database.Collection = "dishes"
@@ -60,7 +51,7 @@ func Dishadd(redisclient *redis.Client, dishInsert Dish) helper.Resultado {
 }
 
 // Find is to find stuff
-func Find(redisclient *redis.Client, dishFind string) (Dish, string) {
+func Find(redisclient *redis.Client, dishFind string) (dishes.Dish, string) {
 
 	database := new(helper.DatabaseX)
 	database.Collection = "dishes"
@@ -68,7 +59,7 @@ func Find(redisclient *redis.Client, dishFind string) (Dish, string) {
 	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
 
 	dishName := dishFind
-	dishnull := Dish{}
+	dishnull := dishes.Dish{}
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
@@ -81,7 +72,7 @@ func Find(redisclient *redis.Client, dishFind string) (Dish, string) {
 
 	c := session.DB(database.Database).C(database.Collection)
 
-	result := []Dish{}
+	result := []dishes.Dish{}
 	err1 := c.Find(bson.M{"name": dishName}).All(&result)
 	if err1 != nil {
 		log.Fatal(err1)
@@ -96,8 +87,8 @@ func Find(redisclient *redis.Client, dishFind string) (Dish, string) {
 	return result[0], "200 OK"
 }
 
-// GetAll works
-func Getall(redisclient *redis.Client) []Dish {
+// Getall works
+func Getall(redisclient *redis.Client) []dishes.Dish {
 
 	database := new(helper.DatabaseX)
 
@@ -124,7 +115,7 @@ func Getall(redisclient *redis.Client) []Dish {
 
 	c := session.DB(database.Database).C(database.Collection)
 
-	var results []Dish
+	var results []dishes.Dish
 
 	err = c.Find(nil).All(&results)
 	if err != nil {
@@ -140,8 +131,53 @@ func Getall(redisclient *redis.Client) []Dish {
 	return nil
 }
 
+// GetAvailable works
+func GetAvailable(redisclient *redis.Client) []dishes.Dish {
+
+	database := new(helper.DatabaseX)
+
+	database.Collection = "dishes"
+
+	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
+	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+
+	// database.Database = "restaurante"
+	// database.Location = "192.168.2.180"
+
+	fmt.Println("database.Location")
+	fmt.Println(database.Location)
+
+	session, err := mgo.Dial(database.Location)
+
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+
+	c := session.DB(database.Database).C(database.Collection)
+
+	var results []dishes.Dish
+
+	err = c.Find(bson.M{"currentavailable": bson.M{"$ne": "0"}}).All(&results)
+
+	if err != nil {
+		// TODO: Do something about the error
+	} else {
+		return results
+	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return nil
+}
+
 // Dishupdate is
-func Dishupdate(redisclient *redis.Client, dishUpdate Dish) helper.Resultado {
+func Dishupdate(redisclient *redis.Client, dishUpdate dishes.Dish) helper.Resultado {
 
 	database := new(helper.DatabaseX)
 	database.Collection = "dishes"
@@ -174,7 +210,7 @@ func Dishupdate(redisclient *redis.Client, dishUpdate Dish) helper.Resultado {
 }
 
 // Dishdelete is
-func Dishdelete(redisclient *redis.Client, dishDelete Dish) helper.Resultado {
+func Dishdelete(redisclient *redis.Client, dishDelete dishes.Dish) helper.Resultado {
 
 	database := new(helper.DatabaseX)
 	database.Collection = "dishes"

@@ -8,8 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	dishes "restauranteapi/dishes"
+	dishesmethods "restauranteapi/dishes"
 	helper "restauranteapi/helper"
+	dishes "restauranteapi/models"
 )
 
 // Hdishfind is
@@ -30,7 +31,7 @@ func Hdishfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
 	fmt.Println("httprequest.FormValue dishname")
 	fmt.Println(dishtofind)
 
-	dishfound, _ = dishes.Find(redisclient, dishtofind)
+	dishfound, _ = dishesmethods.Find(redisclient, dishtofind)
 
 	json.NewEncoder(httpwriter).Encode(&dishfound)
 }
@@ -46,8 +47,13 @@ func Hdishadd(httpwriter http.ResponseWriter, req *http.Request) {
 	dishtoadd.GlutenFree = req.FormValue("dishglutenfree")
 	dishtoadd.DairyFree = req.FormValue("dishdairyfree")
 	dishtoadd.Vegetarian = req.FormValue("dishvegetarian")
+	dishtoadd.InitialAvailable = req.FormValue("dishinitialavailable")
+	dishtoadd.CurrentAvailable = req.FormValue("dishcurrentavailable")
+	dishtoadd.ImageName = req.FormValue("dishimagename")
+	dishtoadd.Description = req.FormValue("dishdescription")
+	dishtoadd.Descricao = req.FormValue("dishdescricao")
 
-	_, recordstatus := dishes.Find(redisclient, dishtoadd.Name)
+	_, recordstatus := dishesmethods.Find(redisclient, dishtoadd.Name)
 	if recordstatus == "200 OK" {
 		fmt.Println("dishtoadd.Name")
 		fmt.Println(dishtoadd.Name)
@@ -66,7 +72,7 @@ func Hdishadd(httpwriter http.ResponseWriter, req *http.Request) {
 	// dishtoadd.DairyFree = params.Get("dishdairyfree")
 	// dishtoadd.Vegetarian = params.Get("dishvegetarian")
 
-	ret := dishes.Dishadd(redisclient, dishtoadd)
+	ret := dishesmethods.Dishadd(redisclient, dishtoadd)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
@@ -86,6 +92,12 @@ func Hdishupdate(httpwriter http.ResponseWriter, req *http.Request) {
 	dishtoupdate.GlutenFree = req.FormValue("dishglutenfree")
 	dishtoupdate.DairyFree = req.FormValue("dishdairyfree")
 	dishtoupdate.Vegetarian = req.FormValue("dishvegetarian")
+	dishtoupdate.InitialAvailable = req.FormValue("dishinitialavailable")
+	dishtoupdate.CurrentAvailable = req.FormValue("dishcurrentavailable")
+	dishtoupdate.ImageName = req.FormValue("dishimagename")
+	dishtoupdate.Description = req.FormValue("dishdescription")
+	dishtoupdate.Descricao = req.FormValue("dishdescricao")
+
 	fmt.Println("dishtoupdate.Name")
 	fmt.Println(dishtoupdate.Name)
 
@@ -97,7 +109,7 @@ func Hdishupdate(httpwriter http.ResponseWriter, req *http.Request) {
 	// dishtoadd.DairyFree = params.Get("dishdairyfree")
 	// dishtoadd.Vegetarian = params.Get("dishvegetarian")
 
-	ret := dishes.Dishupdate(redisclient, dishtoupdate)
+	ret := dishesmethods.Dishupdate(redisclient, dishtoupdate)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
@@ -117,8 +129,13 @@ func Hdishdelete(httpwriter http.ResponseWriter, req *http.Request) {
 	dishtoupdate.GlutenFree = req.FormValue("dishglutenfree")
 	dishtoupdate.DairyFree = req.FormValue("dishdairyfree")
 	dishtoupdate.Vegetarian = req.FormValue("dishvegetarian")
+	dishtoupdate.InitialAvailable = req.FormValue("dishinitialavailable")
+	dishtoupdate.CurrentAvailable = req.FormValue("dishcurrentavailable")
+	dishtoupdate.ImageName = req.FormValue("dishimagename")
+	dishtoupdate.Description = req.FormValue("dishdescription")
+	dishtoupdate.Descricao = req.FormValue("dishdescricao")
 
-	ret := dishes.Dishdelete(redisclient, dishtoupdate)
+	ret := dishesmethods.Dishdelete(redisclient, dishtoupdate)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
@@ -128,7 +145,7 @@ func Hdishdelete(httpwriter http.ResponseWriter, req *http.Request) {
 // Hdishalsolist is
 func Hdishalsolist(httpwriter http.ResponseWriter, req *http.Request) {
 
-	var dishlist = dishes.Getall(redisclient)
+	var dishlist = dishesmethods.Getall(redisclient)
 
 	json.NewEncoder(httpwriter).Encode(&dishlist)
 }
@@ -136,7 +153,15 @@ func Hdishalsolist(httpwriter http.ResponseWriter, req *http.Request) {
 // Hdishlist is a function to return a list of dishes
 func Hdishlist(httpwriter http.ResponseWriter, req *http.Request) {
 
-	var dishlist = dishes.Getall(redisclient)
+	var dishlist = dishesmethods.Getall(redisclient)
+
+	json.NewEncoder(httpwriter).Encode(&dishlist)
+}
+
+// Hdishlistavailable is a function to return a list of dishes
+func Hdishlistavailable(httpwriter http.ResponseWriter, req *http.Request) {
+
+	var dishlist = dishesmethods.GetAvailable(redisclient)
 
 	json.NewEncoder(httpwriter).Encode(&dishlist)
 }

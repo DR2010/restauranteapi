@@ -253,7 +253,7 @@ func Import(redisclient *redis.Client) []BalanceCrypto {
 	return nil
 }
 
-// GetAllNoLimit
+// GetAllNoLimit brings it all
 func GetAllNoLimit(redisclient *redis.Client, currency string) []BalanceCrypto {
 
 	database := new(helper.DatabaseX)

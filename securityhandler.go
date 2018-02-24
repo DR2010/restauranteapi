@@ -65,6 +65,7 @@ func Hsecuritysignup(httpwriter http.ResponseWriter, req *http.Request) {
 	var userInsert security.Credentials
 
 	userInsert.UserID = req.FormValue("userid")
+	userInsert.Name = req.FormValue("preferredname")
 	userInsert.Password = req.FormValue("password")
 	userInsert.PasswordValidate = req.FormValue("passwordvalidate")
 	userInsert.ApplicationID = req.FormValue("applicationid")

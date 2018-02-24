@@ -30,7 +30,7 @@ func Hfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
 	json.NewEncoder(httpwriter).Encode(&objfound)
 }
 
-// Hdishfind is
+// Horderfind is
 func Horderfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
 
 	redisclient := helper.GetRedisPointer()
@@ -61,6 +61,7 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 		Pratoname  string //
 		Quantidade string //
 		Price      string //
+		Total      string //
 	}
 
 	type dcOrder struct {
@@ -108,7 +109,7 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	var slen = len(objtoaction.Items)
 	objtoactionMAP.Items = make([]orders.Item, slen)
 
-	var totalgeral = 0
+	var totalgeral = 0.00
 
 	// I have to remove the header coming from the caller.
 	// Perhaps the caller should suppress the header somehow
@@ -130,15 +131,19 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 		objtoactionMAP.Items[destindex].PratoName = element.Pratoname
 		objtoactionMAP.Items[destindex].Price = element.Price
 		objtoactionMAP.Items[destindex].Quantidade = element.Quantidade
+		objtoactionMAP.Items[destindex].Total = element.Total
 
-		prc, _ := strconv.Atoi(element.Price)
-		qty, _ := strconv.Atoi(element.Quantidade)
+		prc, _ := strconv.ParseFloat(element.Price, 64)
+		qty, _ := strconv.ParseFloat(element.Quantidade, 64)
 		tot := prc * qty
 		totalgeral = totalgeral + tot
+		// objtoactionMAP.Items[destindex].Total = strconv.Itoa(tot)
 
-		objtoactionMAP.Items[destindex].Total = strconv.Itoa(tot)
 	}
-	objtoactionMAP.TotalGeral = strconv.Itoa(totalgeral)
+	// objtoactionMAP.TotalGeral = strconv.Itoa(totalgeral)
+	// objtoactionMAP.TotalGeral = strconv.FormatFloat(totalgeral, 'g', -1, 64)
+
+	objtoactionMAP.TotalGeral = fmt.Sprintf("%.2f", totalgeral)
 
 	ret := orders.Add(redisclient, objtoactionMAP)
 
@@ -211,7 +216,7 @@ func Horderupdate(httpwriter http.ResponseWriter, req *http.Request) {
 	var slen = len(objtoaction.Items)
 	objtoactionMAP.Items = make([]orders.Item, slen)
 
-	var totalgeral = 0
+	var totalgeral = 0.00
 
 	// I have to remove the header coming from the caller.
 	// Perhaps the caller should suppress the header somehow
@@ -222,24 +227,39 @@ func Horderupdate(httpwriter http.ResponseWriter, req *http.Request) {
 		// index is the index where we are
 		// element is the element from someSlice for where we are
 
-		if index == 0 {
-			continue
-		}
+		// if index == 0 {
+		// 	continue
+		// }
 
-		destindex = index - 1
+		// destindex = index - 1
+		// destindex = index
+
+		// objtoactionMAP.Items[destindex].PratoName = element.PratoName
+		// objtoactionMAP.Items[destindex].Price = element.Price
+		// objtoactionMAP.Items[destindex].Quantidade = element.Quantidade
+
+		// prc, _ := strconv.Atoi(element.Price)
+		// qty, _ := strconv.Atoi(element.Price)
+		// tot := prc * qty
+		// totalgeral = totalgeral + tot
+
+		// objtoactionMAP.Items[destindex].Total = strconv.Itoa(tot)
+
+		destindex = index
 
 		objtoactionMAP.Items[destindex].PratoName = element.PratoName
 		objtoactionMAP.Items[destindex].Price = element.Price
 		objtoactionMAP.Items[destindex].Quantidade = element.Quantidade
+		objtoactionMAP.Items[destindex].Total = element.Total
 
-		prc, _ := strconv.Atoi(element.Price)
-		qty, _ := strconv.Atoi(element.Price)
+		prc, _ := strconv.ParseFloat(element.Price, 64)
+		qty, _ := strconv.ParseFloat(element.Quantidade, 64)
 		tot := prc * qty
 		totalgeral = totalgeral + tot
 
-		objtoactionMAP.Items[destindex].Total = strconv.Itoa(tot)
 	}
-	objtoactionMAP.TotalGeral = strconv.Itoa(totalgeral)
+	// objtoactionMAP.TotalGeral = strconv.Itoa(totalgeral)
+	objtoactionMAP.TotalGeral = fmt.Sprintf("%.2f", totalgeral)
 
 	ret := orders.Update(redisclient, objtoactionMAP)
 
@@ -261,6 +281,19 @@ func Horderupdate(httpwriter http.ResponseWriter, req *http.Request) {
 
 	return
 }
+
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// CRIAR um UPDATE apenas para o status
+// porem tenho que consertar o UPDATE ALL FIELDS pois esta removendo os TOTAIS !!!!!!!!!!!!!!!!!!!! 11/02/2018
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
 
 // Hdelete delete orders
 func Hdelete(httpwriter http.ResponseWriter, req *http.Request) {
@@ -288,6 +321,21 @@ func Halsolist(httpwriter http.ResponseWriter, req *http.Request) {
 func OrderList(httpwriter http.ResponseWriter, req *http.Request) {
 
 	var orderlist = orders.Getall(redisclient)
-
 	json.NewEncoder(httpwriter).Encode(&orderlist)
+}
+
+// OrderListV2 also list orders
+func OrderListV2(httpwriter http.ResponseWriter, req *http.Request) {
+
+	var userid = req.FormValue("clientid") // This is the key, must be unique
+
+	if userid == "" {
+		orderlist1 := orders.Getall(redisclient)
+		json.NewEncoder(httpwriter).Encode(&orderlist1)
+	} else {
+		orderlist2 := orders.GetallbyUser(redisclient, userid)
+		json.NewEncoder(httpwriter).Encode(&orderlist2)
+	}
+
+	// json.NewEncoder(httpwriter).Encode(&orderlist)
 }
